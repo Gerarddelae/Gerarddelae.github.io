@@ -101,7 +101,7 @@ _**Figura 1:** *Ejemplo de estructura del documento (fuente: NSR-10)*_
 
 #### 2.2 Esquema del flujo.
 
-![Esquema del flujo](\esquemarag1.png)
+![Esquema del flujo](esquemarag1.png)
 <div class="centered-text" >
 
 _**Figura 2:** *Flujo propuesto para la implementacion de RAG en el documento (fuente: elaboracion propia)*_
