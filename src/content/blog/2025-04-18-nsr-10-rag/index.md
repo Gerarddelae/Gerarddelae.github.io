@@ -89,7 +89,7 @@ Para efectos de avanzar en la solucion del problema, vamos a enfocarnos en el pr
 ### 1. Caracterizacion del documento.
 Como recien se mencionó, el titulo con el cual se hara el ejercicio será el "A", que contiene los requisitos generales para el diseño y construccion sismo resistente. Es un documento de 175 páginas en formato PDF de 1.9 Mb, que contiene conceptos, graficas, tablas y formulas complejas en notacion que parece ser LaTeX; en cuanto a su estructura podemos ver que esta compuesto por capitulos y secciones con numeracion especifica, que se utilizan para identificar cada apartado del documento y poder hacer referencias precisas en cualquier parte del documento.
 
-![Estructura documento](\Estructura.png)
+![Estructura documento](Estructura.png)
 <div class="centered-text" >
 
 _**Figura 1:** *Ejemplo de estructura del documento (fuente: NSR-10)*_
