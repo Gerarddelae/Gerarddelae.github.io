@@ -97,7 +97,7 @@ _**Figura 1:** *Ejemplo de estructura del documento (fuente: NSR-10)*_
 
 ### 2. Flujo propuesto.
 #### 2.1 Entorno de desarrollo elegido.
-- Al ser esta una prueba de concepto, y con la necesidad de probar diferentes modelos y configuraciones con más facilidad, el flujo de trabajo se llevará se realizará en una instancia de Google Colab; de igual manera notaremos que las tecnologías utilizadas son open-source, entonces dependerá de nuestro hardware (no son necesarias grandes infraestructuras a día de hoy) el que podamos tenerlas en local. 
+- Al ser esta una prueba de concepto, y con la necesidad de probar diferentes modelos y configuraciones con más facilidad, el flujo de trabajo se realizará en una instancia de Google Colab; de igual manera notaremos que las tecnologías utilizadas son open-source, entonces dependerá de nuestro hardware (no son necesarias grandes infraestructuras a día de hoy) el que podamos tenerlas en local. 
 
 #### 2.2 Esquema del flujo.
 
@@ -110,8 +110,8 @@ _**Figura 2:** *Flujo propuesto para la implementación de RAG en el documento (
 
 #### 2.3 Preliminares.
 
-- Debido a la complejidad del formato PDF, se hace necesario convertirlo en un formato más simple, esto porque si en el proceso de extracción mantenemos el formato original; nos encontramos con que no se mantienen la estructura de las tablas y muchos símbolos referentes a ecuaciones no son interpretados de manera correcta; dificultando el poder responder con precisión.
-- El formato elegido para la conversión será markdown (.md) porque nos brinda una serie de ventajas como pueden ser:
+- Debido a la complejidad del formato PDF, se hace necesario convertirlo en un formato más simple, esto porque si para el proceso de extracción mantenemos el formato original; nos encontramos con que no se mantienen la estructura de las tablas y muchos símbolos referentes a ecuaciones no son interpretados de manera correcta; dificultando el poder responder con precisión.
+- El formato elegido para la conversión será markdown *(.md)* porque nos brinda una serie de ventajas como pueden ser:
     - Posee una estructuración clara y visible que separa entre encabezados y secciones; lo que ayuda al modelo a entender la jerarquía y organización del contenido.
     - Facilita la representación de información estructurada, como pasos, características o datos comparativos.
     - Permite la inclusión de bloques de código o ecuaciones de diseño, lo que facilita el entendimiento de este tipo de información y posterior presentación en las respuestas.
@@ -185,7 +185,7 @@ print("✅ Vector Store creada y almacenada en disco.")
 - Para este punto ya tenemos la primera mitad de nuestro **RAG** configurada, ahora es momento de dotar al LLM del contexto, para esto necesitamos la opción de realizar una búsqueda teniendo en cuenta la pregunta del usuario en nuestra base de datos vectorial (que recordemos contiene representaciones del contexto y significado de cada fragmento). De nuevo acá nos apoyaremos de **Langchain** donde es muy fácil realizar este proceso. Es tan fácil como agregar al **"prompt"** el siguiente contexto que contiene los resultados de la búsqueda, donde **_k_** es el número de fragmentos que se van a recuperar (se recomienda que este número no sea tan grande con el fin de que no se pierda el asunto principal de la pregunta).
 
 ```python
-# Busqueda semantica por similaridad.
+# Busqueda semantica por similitud.
 def construir_contexto_limitado(pregunta, k=4):
     docs = vector_store.similarity_search(pregunta, k=k)
     contexto = "\n---\n".join([doc.page_content for doc in docs])
