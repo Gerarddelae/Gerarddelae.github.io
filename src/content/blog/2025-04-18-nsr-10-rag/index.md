@@ -67,7 +67,7 @@ _**Tabla 1:** **Títulos de la NSR-10 con páginas por titulo**_
 
 <div class="justified-text">
 
-_**Disclaimer:** La intención de la creación de este tipo de herramientas no es para crear o promover la poca rigurosidad o irresponsabilidad en los profesionales, ya que el criterio de los mismos debería ser el encargado de la toma de decisiones clave en los proyectos; este tipo de herramientas deben entenderse más como herramientas de consulta y de ayuda en la interpretación, más adelante veremos cómo podemos pedir que se realicen anotaciones a las partes citadas del documento, para que los profesionales puedan corroborar la información que se les brinda._
+_**Disclaimer:** La intención de la creación de este tipo de herramientas no es para promover la poca rigurosidad o irresponsabilidad en los profesionales, ya que el criterio de los mismos debería ser el encargado de la toma de decisiones clave en los proyectos; este tipo de herramientas deben entenderse más como herramientas de consulta y de ayuda en la interpretación; más adelante veremos cómo podemos pedir que se realicen anotaciones a las partes citadas del documento, para que los profesionales puedan corroborar la información que se les brinda._
 
 </div>
 
@@ -87,7 +87,7 @@ Intentando ponernos un poco más técnicos, lo que sucede es que se realiza una 
 Para efectos de avanzar en la solución del problema, vamos a enfocarnos en el primer título de la normativa, ya que tiene bastante naturaleza cualitativa y está lleno de conceptos, por lo que puede servirnos como un buen punto de partida.
 
 ### 1. Caracterización del documento.
-Como recién se mencionó, el título con el cual se hará el ejercicio será el "A", que contiene los requisitos generales para el diseño y construcción sismo resistente. Es un documento de 175 páginas en formato PDF de 1.9 Mb, que contiene conceptos, gráficas, tablas y fórmulas complejas en notación que parece ser LaTeX; en cuanto a su estructura podemos ver que está compuesto por capítulos y secciones con numeración específica, que se utilizan para identificar cada apartado del documento y poder hacer referencias precisas en cualquier parte del documento.
+Como recién se mencionó, el título con el cual se hará el ejercicio será el "A", que contiene los requisitos generales para el diseño y construcción sismo resistente. Es un documento de 175 páginas en formato PDF de 1.9 Mb, que contiene conceptos, gráficas, tablas y fórmulas complejas en notación que parece ser LaTeX; en cuanto a su estructura podemos ver que está compuesto por capítulos y secciones con numeración específica, que se utilizan para identificar cada apartado del documento y poder hacer referencias precisas en cualquier ubicación que sea necesaria.
 
 ![Estructura documento](Estructura.png)
 <div class="centered-text" >
@@ -97,7 +97,7 @@ _**Figura 1:** *Ejemplo de estructura del documento (fuente: NSR-10)*_
 
 ### 2. Flujo propuesto.
 #### 2.1 Entorno de desarrollo elegido.
-- Al ser esta una prueba de concepto, y con la necesidad de poder probar diferentes modelos y configuraciones con más facilidad, el flujo de trabajo se llevará a cabo en una instancia de Google Colab, de igual manera notaremos que las tecnologías utilizadas son open-source por lo que solo dependerá de nuestro hardware (no son necesarias grandes infraestructuras a día de hoy) el que podamos tenerlas en local. 
+- Al ser esta una prueba de concepto, y con la necesidad de probar diferentes modelos y configuraciones con más facilidad, el flujo de trabajo se llevará se realizará en una instancia de Google Colab; de igual manera notaremos que las tecnologías utilizadas son open-source, entonces dependerá de nuestro hardware (no son necesarias grandes infraestructuras a día de hoy) el que podamos tenerlas en local. 
 
 #### 2.2 Esquema del flujo.
 
@@ -110,22 +110,22 @@ _**Figura 2:** *Flujo propuesto para la implementación de RAG en el documento (
 
 #### 2.3 Preliminares.
 
-- Antes de empezar, se hace necesario hacerle un tratamiento al archivo, debido a la complejidad del formato PDF, se hace necesario convertirlo en un formato más simple, debido a que en el proceso de extracción si mantenemos el formato original; nos encontramos con que no se mantienen la estructura de las tablas y muchos símbolos referentes a ecuaciones no son interpretados de manera correcta; dificultando así la tarea de poder responder con precisión.
+- Debido a la complejidad del formato PDF, se hace necesario convertirlo en un formato más simple, esto porque si en el proceso de extracción mantenemos el formato original; nos encontramos con que no se mantienen la estructura de las tablas y muchos símbolos referentes a ecuaciones no son interpretados de manera correcta; dificultando el poder responder con precisión.
 - El formato elegido para la conversión será markdown (.md) porque nos brinda una serie de ventajas como pueden ser:
     - Posee una estructuración clara y visible que separa entre encabezados y secciones; lo que ayuda al modelo a entender la jerarquía y organización del contenido.
     - Facilita la representación de información estructurada, como pasos, características o datos comparativos.
     - Permite la inclusión de bloques de código o ecuaciones de diseño, lo que facilita el entendimiento de este tipo de información y posterior presentación en las respuestas.
     - Otra ventaja es que en el mismo proceso de "parsear" los documentos podemos obtener metadatos en formato JSON que son de bastante ayuda para el filtrado de fragmentos importantes, además de facilitar la ubicación (páginas, secciones) de la información relevante en el documento.
 
-- Este proceso podría hacerse en local gracias a la librería **Marked-PDF** de Python, con muy buenos resultados finales. Pero para el caso de nuestra instancia de Google Colab tenemos la limitación de poder dejar durante cierto tiempo un proceso en ejecución, por lo que nos encontramos con una primera barrera. La buena noticia es que gracias a _**Llama Index**_ y sus servicios en la nube podemos realizar este proceso con mayor velocidad; ya que su prueba gratuita es bastante generosa. Además para nuestro ejemplo solo nos es necesario hacer este proceso una vez.
+- Este proceso podría hacerse en local gracias a la librería **Marked-PDF** de Python, con muy buenos resultados finales. Pero para nuestra instancia de Google Colab tenemos la limitación de dejar durante cierto tiempo un proceso en ejecución, por lo que nos encontramos con una primera barrera. La buena noticia es que gracias a _**Llama Index**_ y sus servicios en la nube podemos realizar este proceso con mayor velocidad; ya que su prueba gratuita es bastante generosa. Además para nuestro ejemplo solo es necesario hacer este proceso una vez.
 
 <br>
 
 #### 2.4 División de documentos y creación de embeddings.
 
-- Una vez tenemos el archivo markdown y los metadatos es momento de dividir el documento en _**chunks**_ (fragmentos cada n tokens), de manera que el proceso es más eficiente para el LLM. Este valor es clave ya que dividir el documento en un número muy bajo de palabras puede hacer que exista pérdida de contexto y a su vez alucinación. Por eso mismo y también con la intención de preservar el mayor contexto posible también se agrega un _**chunk overlap**_ (es decir un solapamiento entre ambos fragmentos de texto). Este proceso lo llevaremos gracias a la librería de **Langchain** en Python que nos proporciona un marco para realizar este tipo de procesos.
+- Una vez tenemos el archivo markdown y los metadatos es momento de dividir el documento en _"**chunks**"_ (fragmentos cada *_n_* tokens), de manera que el proceso sea más eficiente para el LLM. Este valor es clave ya que dividir el documento en un número muy bajo de palabras puede hacer que se de pérdida de contexto y a su vez alucinación. Por eso mismo y también con la intención de preservar el mayor contexto posible se agrega un _"**chunk overlap**"_ (es decir un solapamiento entre ambos fragmentos de texto). Este proceso lo realizaremos gracias a la librería de **Langchain** en Python, que nos proporciona un marco para realizar este tipo de procesos.
 
-- El siguiente paso es convertir estos fragmentos en _**Embeddings**_ que son representaciones vectoriales densas que codifican la semántica y relaciones contextuales de cada fragmento en un espacio de alta dimensionalidad. Para este caso de uso usaremos la Base de datos vectorial de **Chroma DB**, que utiliza por debajo **SQLite3** por lo que es bastante cómodo y nos ahorra configuraciones.
+- El siguiente paso es convertir estos fragmentos en _**Embeddings**_, que son representaciones vectoriales densas que codifican la semántica y relaciones contextuales de cada fragmento en un espacio de alta dimensionalidad. En esta ocasión usaremos la Base de datos vectorial de **Chroma DB**, que utiliza por debajo **SQLite3** por lo que es bastante cómodo y nos ahorra configuraciones.
 
 ```python
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -182,7 +182,7 @@ print("✅ Vector Store creada y almacenada en disco.")
 <br>
 
 #### 2.5 Búsqueda Semántica por similitud.
-- Para este punto ya tenemos la primera mitad de nuestro **RAG** configurada, ahora es momento de dotar al LLM del contexto, por lo cual necesitamos una manera de realizar una búsqueda teniendo en cuenta la pregunta del usuario en nuestra base de datos vectorial (que recordemos contiene representaciones del contexto y significado de cada fragmento). De nuevo acá nos apoyaremos de **Langchain** donde es muy fácil realizar este proceso. Es tan fácil como agregar al **"prompt"** el siguiente contexto que contiene los resultados de la búsqueda, donde **_k_** es el número de fragmentos que se van a recuperar (se recomienda que este número no sea tan grande con el fin de que no se pierda el foco del asunto de la pregunta).
+- Para este punto ya tenemos la primera mitad de nuestro **RAG** configurada, ahora es momento de dotar al LLM del contexto, para esto necesitamos la opción de realizar una búsqueda teniendo en cuenta la pregunta del usuario en nuestra base de datos vectorial (que recordemos contiene representaciones del contexto y significado de cada fragmento). De nuevo acá nos apoyaremos de **Langchain** donde es muy fácil realizar este proceso. Es tan fácil como agregar al **"prompt"** el siguiente contexto que contiene los resultados de la búsqueda, donde **_k_** es el número de fragmentos que se van a recuperar (se recomienda que este número no sea tan grande con el fin de que no se pierda el asunto principal de la pregunta).
 
 ```python
 # Busqueda semantica por similaridad.
@@ -195,7 +195,7 @@ def construir_contexto_limitado(pregunta, k=4):
 <br>
 
 #### 2.6 Estrategias de Prompting.
-- Como último paso en las configuraciones es necesario agregarle ciertas instrucciones al LLM con el fin de ajustar su personalidad, asegurarnos que no saque información de otras fuentes o incluso especificarle algún formato de salida para facilitar la visualización de fórmulas o tablas. Como bonus se recomienda el uso de modelos razonadores para tener más rigurosidad y análisis previo a la respuesta.
+- Como último paso en las configuraciones es necesario agregarle ciertas instrucciones al LLM con el fin de ajustar su personalidad, asegurarnos que no use información de otras fuentes o incluso especificarle algún formato de salida para facilitar la visualización de fórmulas o tablas. Como bonus se recomienda el uso de *modelos razonadores* para tener más rigurosidad y análisis previo a la respuesta.
 
 ```python
 # Ejemplo de instrucciones.
@@ -211,12 +211,12 @@ def construir_contexto_limitado(pregunta, k=4):
 <br>
 
 ### 3. Análisis de resultados
-Con el fin de determinar si se ha conseguido el objetivo se deberían realizar estrategias mas extensas y someter a preguntas complejas al modelo. Esto puede ser objeto de un próximo articulo, por el momento nos limitaremos a realizarle una pregunta en base a una tabla para ver si fue capaz de extraer de buena manera la información, ya que gran parte de la información importante del mismo se encuentra contenido en tablas. La pregunta en cuestión a realizar será. 
+Con el fin de determinar si se ha conseguido el objetivo se deberían realizar estrategias mas extensas y someter a preguntas complejas al modelo. Esto puede ser objeto de un próximo articulo, por el momento nos limitaremos a realizarle una pregunta en base a una tabla, para ver si fue capaz de extraer la información. Teniendo en cuenta que gran parte de la información importante del mismo se encuentra contenido en tablas. La pregunta en cuestión a realizar será. 
 
 ```python
 pregunta = "¿puedes explicarme las diferencias entre los distintos tipos de suelo que plantea la nsr-10?"
 ```
-La respuesta a esta pregunta quienes hemos trabajado con esta normativa sabemos que se encuentra en una tabla y podemos recordar su estructura y que datos contiene, pero difícilmente recordaríamos el capitulo o tabla exacta que lo contiene de memoria.
+La respuesta a esta pregunta para quienes hemos trabajado con esta normativa, sabemos que se encuentra en una tabla y podemos recordar su estructura y que datos contiene, pero difícilmente recordaríamos el capitulo o tabla exacta de memoria.
 
 la tabla en cuestión que clasifica los tipos de suelos es la A.2.4-1 y se presenta de la siguiente forma.
 
@@ -227,7 +227,7 @@ la tabla en cuestión que clasifica los tipos de suelos es la A.2.4-1 y se prese
 
 _**Figura 3:** *Tabla A.2.4-1 clasificación de tipos de suelo (fuente: NSR-10)*_
 </div>
-Como podemos apreciar es una tabla con bastantes formulas y símbolos además de una estructura que no es del todo regular, esto la hace una oportunidad interesante de ver si se pudo extraer la información. A continuación los resultados obtenidos.
+Como podemos apreciar es una tabla con bastantes formulas y símbolos, además de una estructura que no es del todo regular, esto la hace una oportunidad interesante de ver si se pudo extraer la información. A continuación los resultados obtenidos.
 
 ![resultado1](respuesta1.png)
 ![resultado2](respuesta2.png)
@@ -237,17 +237,17 @@ Como podemos apreciar es una tabla con bastantes formulas y símbolos además de
 _**Figura 4 y 5:** *Respuestas obtenidas por el RAG a la pregunta realizada*_
 </div>
 
-Podemos notar que hizo una extracción perfecta de la información sin importar la complejidad de la tabla y fue capaz de relacionar satisfactoriamente las columnas y filas. Además fue capaz de citar la tabla a la cual hicimos referencia con anterioridad; sumado a esto fue capaz de encontrar las definiciones de los símbolos como por ejemplo la resistencia al corte no drenado que se encontraba en paginas anteriores a la tabla. Por ultimo respondió a nuestra respuesta razonando y basándose solo en la información dada.
+Podemos notar que hizo una extracción perfecta de la información sin importar la complejidad de la tabla y fue capaz de relacionar satisfactoriamente las columnas y filas. Además fue capaz de citar la tabla a la cual hicimos referencia con anterioridad; sumado a esto fue capaz de encontrar las definiciones de los símbolos como por ejemplo, la resistencia al corte no drenado que se encontraba en paginas anteriores a la tabla. Por ultimo respondió a nuestra pregunta razonando y basándose solo en la información dada.
 
 <br>
 
 ### 4. Conclusiones
-Gracias a los avances en inteligencia artificial pudimos crear las bases para un asistente que facilite las consultas de información técnica a los ingenieros, ahorrándoles tiempo en temas que ya conocen y ayudándoles a explorar  así como comprender temas nuevos con mayor fluidez. Permitiendo la toma de decisiones mejor informadas y más rápidas. 
+Gracias a los avances en inteligencia artificial pudimos crear las bases para un asistente que facilite las consultas de información técnica a los ingenieros, ahorrándoles tiempo en temas que ya conocen y ayudándoles a explorar y comprender temas nuevos con mayor fluidez. Permitiendo la toma de decisiones mejor informadas y más rápidas. 
 
 <br>
 
 ### 5. Pasos a seguir
-Con esta base es fácil imaginarnos un chatbot que este alimentado con normativas completas y podamos interactuar con el de una manera mas intuitiva y amigable. Que además aprovechando conceptos modernos en el mundo de la IA como MCP servers nos permitan automatizar procesos complejos y repetitivos, con un marco riguroso que nos permita asegurarnos de la información o resultados que nos proporcionan.
+Con esta base es fácil imaginarnos un chatbot que este alimentado con normativas completas y podamos interactuar con el de una manera mas intuitiva y amigable. Que además aprovechando conceptos modernos en el mundo de la IA, como *MCP servers* nos permitan automatizar procesos complejos y repetitivos, con un marco riguroso para asegurarnos de la información o resultados que nos proporcionan.
 
 </div>
 
