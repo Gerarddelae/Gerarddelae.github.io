@@ -4,5 +4,14 @@
         "plaintext": false,
         "markdown": false,
         "scminput": false
-    }
+    },
+    "spellright.language": [
+        "en",
+        "es"
+    ],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex",
+        "plaintext"
+    ]
 }
