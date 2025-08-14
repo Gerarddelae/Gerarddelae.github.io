@@ -282,11 +282,11 @@ A continuación se presentan diagramas de flujo que muestran lo explicado anteri
 
 ### Flujo de autenticación
 
-![Alt text](\authentication.png)
+![Alt text](authentication.png)
 
 ### Flujo de autorización
 
-![Alt text](\authorization.png)
+![Alt text](authorization.png)
 
 ## Conclusiones
 
