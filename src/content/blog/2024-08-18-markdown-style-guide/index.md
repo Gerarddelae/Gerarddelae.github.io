@@ -7,6 +7,7 @@ pubDate: '2024-08-18'
 updatedDate: '2024-08-19'
 tags: ["Markdown", "Guide"]
 coverImage: './blog-placeholder-4.jpg'
+draft: true
 ---
 
 Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.

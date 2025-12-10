@@ -12,6 +12,12 @@ export interface Project {
 
 export const projects: Project[] = [
   {
+    name: 'MAGUESTIC',
+    description: 'Maguestic is a full-stack hotel management application built with Angular and Spring Boot. It provides a comprehensive solution for managing hotel operations including bookings, guests, rooms, and services with a modern and responsive interface.',
+    demoLink: 'https://github.com/Gerarddelae/hotel-spring-angular',
+    tags: ['Angular', 'Spring Boot', 'Full-stack']
+  },
+  {
     name: 'HOTEL SPA',
     description: 'Hotel SPA is a single-page application (SPA) designed for small hotels looking to efficiently manage guests, bookings, rooms, and other essential operations. The platform provides an intuitive interface for hotel staff to handle daily operations while maintaining a centralized database of all hotel-related information.',
     demoLink: 'https://github.com/Gerarddelae/hotel-spa',

@@ -4,7 +4,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
-import Ava from '@src/assets/img/ava.jpeg';
+import Ava from '@src/assets/img/ava1.png';
 import Prose from '../components/Prose.astro';
 import { projects } from './projects/projects';
 import ProjectList from '../components/ProjectList.astro'
@@ -13,18 +13,18 @@ import PostItem from '../components/PostItem.astro';
 type BlogPost = CollectionEntry<'blog'>;
 
 const top6Projects = projects.slice(0, 6);
-const posts = (await getCollection('blog')).sort((a: BlogPost, b: BlogPost) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()).slice(0, 5);
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a: BlogPost, b: BlogPost) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()).slice(0, 5);
 ---
 
 <BaseLayout title={SITE_TITLE + ' - ' + SITE_TAGLINE} description={SITE_DESCRIPTION}>
 	<div class='container'>
 		<div class='w-full md:flex md:items-center gap-16 mb-10'>
       <div class="text-pretty leading-9">
-        <h1 class="text-4xl font-bold mb-4">Hi There 👋, Gerardo Here! </h1>
+        <h1 class="text-4xl font-bold mb-4">¡Hola! 👋, ¡Soy Gerardo! </h1>
         <Prose>
           <div class="text-lg">
-            <p class="text-justify">Civil Engineer & Full Stack Developer
-              Passionate about building the future both physically and digitally, I combine my expertise in Civil Engineering with my skills as a Full Stack Developer to create innovative, efficient, and sustainable solutions. With a strong foundation in structural design and project management, I bring precision and problem-solving abilities to the tech world, developing robust web applications that drive impact.</p>
+            <p class="text-justify">Ingeniero Civil, Analista y Desarrollador de Software
+              Apasionado por construir el futuro tanto física como digitalmente, combino mi experiencia en Ingeniería Civil con mis habilidades como Analista y Desarrollador de Software para crear soluciones innovadoras, eficientes y sostenibles. Actualmente me encuentro estudiando temas de Machine Learning para ofrecer soluciones más integrales. Con una sólida base en diseño estructural, gestión de proyectos y desarrollo de software, aporto precisión y capacidades de resolución de problemas, desarrollando aplicaciones robustas que generan impacto.</p>
           </div>
         </Prose>
       </div>

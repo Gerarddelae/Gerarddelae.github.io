@@ -29,7 +29,7 @@ function groupTagsByFirstLetter(tags: Tag[]) {
     }));
 }
 
-const allPosts: BlogPost[] = await getCollection('blog');
+const allPosts: BlogPost[] = await getCollection('blog', ({ data }) => !data.draft);
 const mappedTags: { [key: string]: Tag } = {};
 for (const post of allPosts) {
 	for (const tag of post.data?.tags || []) {
