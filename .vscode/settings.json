@@ -10,7 +10,6 @@
         "es"
     ],
     "spellright.documentTypes": [
-        "markdown",
         "latex",
         "plaintext"
     ]
