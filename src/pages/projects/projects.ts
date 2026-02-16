@@ -30,4 +30,12 @@ export const projects: Project[] = [
     demoLinkRel: 'nofollow noopener noreferrer',
     tags: ['AI', 'Saas', 'Agent', 'Python']
   }
+  ,
+  {
+    name: 'VOXPOPULY',
+    description: 'Voxpopuly is an open-source project for collecting, aggregating and visualizing public opinions. It provides lightweight polling and analytics tools to help teams gather quick feedback and derive insights from community responses.',
+    demoLink: 'https://github.com/Gerarddelae/voxpopuly',
+    demoLinkRel: 'nofollow noopener noreferrer',
+    tags: ['Open Source', 'Polling', 'Analytics']
+  }
 ]
