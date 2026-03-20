@@ -5,7 +5,7 @@ import AvaLogo from '@src/assets/img/small-ava1.png';
 import GithubWhite from '@src/assets/img/github-mark-white.svg';
 import GithubBlack from '@src/assets/img/github-mark.svg';
 
-import { SITE_EMAIL } from '@src/consts';
+import { SITE_EMAIL, SITE_LINKEDIN } from '@src/consts';
 
 const menu = [
   {
@@ -47,7 +47,7 @@ const menu = [
 					<Image src={GithubBlack} width={20} height={20} alt='Github logo' class="dark:hidden" />
 					<Image src={GithubWhite} width={20} height={20} alt='Github logo' class="hidden dark:block" />
 				</a>
-				<a class='social-link p-2.5' href='https://linkedin.com/in/#' target='_blank' aria-label="LinkedIn">
+				<a class='social-link p-2.5' href={SITE_LINKEDIN} target='_blank' aria-label="LinkedIn">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
 				</a>
 				<a class='social-link p-2.5' href={`mailto:${SITE_EMAIL}`} aria-label="Email">

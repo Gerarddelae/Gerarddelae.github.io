@@ -5,3 +5,4 @@ export const SITE_TITLE = 'Gerardo';
 export const SITE_TAGLINE = 'Portafolio'; // site tagline
 export const SITE_DESCRIPTION = 'Portafolio de Gerardo: Ingeniero Civil y Desarrollador Full Stack apasionado por construir el futuro digital.'; // site meta description for SEO
 export const SITE_EMAIL = 'gerardmoe@hotmail.com';
+export const SITE_LINKEDIN = 'https://www.linkedin.com/in/gerardodelae/';
