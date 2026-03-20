@@ -1,19 +1,20 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProjectList from '../../components/ProjectList.astro';
-import { projects } from './projects';
+import { projects } from '../../data/projects';
 
+const allProjects = projects;
 ---
 
 <BaseLayout
-	title="All My Projects"
-	description="All my project portfolio from real projects to open source projects."
+	title="Mis Proyectos | Gerardo"
+	description="Una colección de mis trabajos, desde aplicaciones full-stack hasta experimentos de IA y contribuciones de código abierto."
 >
   <div class='container'>
-    <div class="mb-10">
-      <h1 class="text-3xl font-bold mb-2">All My Projects</h1>
-      <p class="text-zinc-700 dark:text-zinc-300 text-lg">All my project portfolio from real projects to open source projects.</p>
+    <div class="mb-10 animate-fade-up">
+      <h1 class="text-5xl font-black mb-4 tracking-tight">Mis Proyectos</h1>
+      <p class="text-[var(--color-text-secondary)] text-xl leading-relaxed max-w-2xl">Una colección curada de mis trabajos, que abarca desde aplicaciones full-stack hasta experimentos de IA y contribuciones de código abierto.</p>
     </div>
-    <ProjectList projects={projects}/>
+    <ProjectList projects={allProjects}/>
   </div>
 </BaseLayout>

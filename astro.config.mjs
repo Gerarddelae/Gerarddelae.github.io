@@ -8,21 +8,23 @@ import partytown from '@astrojs/partytown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
+import { remarkReadingTime } from './src/remark-reading-time.mjs';
+
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://Gerardelae.github.io',
 	integrations: [mdx(), sitemap(), tailwind(), partytown()],
 	markdown: {
 		extendDefaultPlugins: true,
+		remarkPlugins: [remarkMath, remarkReadingTime],
 		rehypePlugins: [
 			[
 				autoNewTabExternalLinks,
 				{
 					domain: 'localhost:4321'
 				}
-			]
-		],
-		remarkPlugins: [remarkMath],
-		rehypePlugins: [rehypeKatex]
+			],
+			rehypeKatex
+		]
 	}
 });
