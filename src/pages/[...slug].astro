@@ -23,83 +23,130 @@ const post = Astro.props;
 const {
 	data: { title, seoTitle, description, coverImage, pubDate, updatedDate, tags }
 } = post;
-const { Content, headings } = await post.render();
+const { Content, headings, remarkPluginFrontmatter } = await post.render();
 ---
 
 <BaseLayout title={seoTitle || title} description={description} image={coverImage?.src || undefined}>
-	<div class='container lg:flex gap-10'>
-		<main
-			class='overflow-hidden grow'
-		>
-			<article>
-				<Prose>
-					<div>
-						<h1 class='!my-1 leading-tight'>{title}</h1>
-            <div class='text-sm font-[500] mt-2 sm:mt-0 py-1 md:text-right flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center'>
+  <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-indigo-600 dark:bg-indigo-400 z-[1000] transition-all duration-150 w-0"></div>
+
+	<div class='container max-w-6xl mx-auto px-4'>
+		<div class="lg:flex gap-12 pt-8 pb-16">
+      <main class='grow min-w-0'>
+        <article>
+          <header class="mb-12">
+            <div class="flex flex-wrap gap-2 mb-6">
               {
-                <div class='flex gap-2'>
-                  {
-                    (tags || [] )?.map((tag: string) => (
-                      <a
-                        class='border border-zinc-300 dark:border-zinc-700 rounded-2xl
-                          text-sm text-zinc-700 dark:text-zinc-300 no-underline px-2 py-0.5
-                          transition-all duration-700
-                        hover:border-zinc-700 dark:hover:border-zinc-300'
-                        href={`/tags/${slugify(tag)}`}>
-                        {tag}
-                      </a>
-                    ))
-                  }
-                </div>
+                (tags || [] )?.map((tag: string) => (
+                  <a
+                    class="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:border-indigo-500 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 bg-white dark:bg-zinc-900"
+                    href={`/tags/${slugify(tag)}`}>
+                    {tag}
+                  </a>
+                ))
               }
-              <div>
+            </div>
+
+            <h1 class='text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6 text-zinc-900 dark:text-zinc-100' transition:name={`title-${post.slug}`}>
+              {title}
+            </h1>
+
+            <div class='flex items-center gap-4 text-zinc-500 dark:text-zinc-400 text-sm font-medium mb-10'>
+              <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 {
                   updatedDate ?
-                    <>Updated on <strong><FormattedDate date={updatedDate} /></strong></>
+                    <span>Actualizado el <strong><FormattedDate date={updatedDate} /></strong></span>
                   :
-                    <>Published on <strong><FormattedDate date={pubDate} /></strong></>
+                    <span>Publicado el <strong><FormattedDate date={pubDate} /></strong></span>
                 }
               </div>
+              <div class="w-1.5 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+              <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>{remarkPluginFrontmatter?.minutesRead?.replace('min read', 'min de lectura') || 'Lectura corta'}</span>
+              </div>
             </div>
-					</div>
-          <div class='py-3 overflow-hidden'>
-            {coverImage && <Image class='rounded-3xl w-full m-0 lg:mb-2' src={coverImage} alt={title} loading='eager' />}
-          </div>
-					<Content />
-				</Prose>
-        {
-          GISCUS_REPO &&
-            <script
-              id='giscus-script'
-              is:inline
-              src='https://giscus.app/client.js'
-              data-repo={GISCUS_REPO}
-              data-repo-id={GISCUS_REPO_ID}
-              data-category={GISCUS_CATEGORY}
-              data-category-id={GISCUS_CATEGORY_ID}
-              data-mapping='pathname'
-              data-strict='0'
-              data-reactions-enabled='1'
-              data-emit-metadata='0'
-              data-input-position='bottom'
-              data-theme='preferred_color_scheme'
-              data-lang='en'
-              crossorigin='anonymous'
-              async></script>
-        }
 
-			</article>
-		</main>
-    <div class='shrink-0 w-[280px] hidden md:block'>
-      <div class='mb-4'>
-				<AboutTheAuthor />
-			</div>
-			<TableOfContent headings={headings} />
-		</div>
+            {coverImage && (
+              <div class="relative group overflow-hidden rounded-[2rem] shadow-2xl shadow-zinc-200 dark:shadow-none mb-12">
+                <Image 
+                  class='w-full object-cover max-h-[600px] transition-transform duration-700 group-hover:scale-105' 
+                  src={coverImage} 
+                  alt={title} 
+                  loading='eager' 
+                  transition:name={`image-${post.slug}`}
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+              </div>
+            )}
+          </header>
+          
+          <!-- Mobile TOC -->
+          <div class="lg:hidden mb-12 p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+            <h3 class="text-lg font-bold mb-4 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 dark:text-indigo-400"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+              Tabla de Contenidos
+            </h3>
+            <TableOfContent headings={headings} />
+          </div>
+
+          <Prose>
+            <Content />
+          </Prose>
+
+          {
+            GISCUS_REPO &&
+              <div class="mt-16 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                <script
+                  id='giscus-script'
+                  is:inline
+                  src='https://giscus.app/client.js'
+                  data-repo={GISCUS_REPO}
+                  data-repo-id={GISCUS_REPO_ID}
+                  data-category={GISCUS_CATEGORY}
+                  data-category-id={GISCUS_CATEGORY_ID}
+                  data-mapping='pathname'
+                  data-strict='0'
+                  data-reactions-enabled='1'
+                  data-emit-metadata='0'
+                  data-input-position='bottom'
+                  data-theme='preferred_color_scheme'
+                  data-lang='es'
+                  crossorigin='anonymous'
+                  async></script>
+              </div>
+          }
+        </article>
+      </main>
+
+      <aside class='shrink-0 w-full lg:w-[320px] hidden lg:block space-y-8'>
+        <div class="p-6 rounded-3xl bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <AboutTheAuthor />
+        </div>
+        
+        <div class="sticky top-24 p-6 rounded-3xl bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <h3 class="text-lg font-bold mb-4 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 dark:text-indigo-400"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+            Tabla de Contenidos
+          </h3>
+          <TableOfContent headings={headings} />
+        </div>
+      </aside>
+    </div>
 	</div>
 </BaseLayout>
 
-<script async is:inline>
+<script is:inline>
+  function updateProgressBar() {
+    const progressBar = document.getElementById('progress-bar');
+    if (!progressBar) return;
+    
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = (winScroll / height) * 100;
+    progressBar.style.width = scrolled + "%";
+  }
+
 	const anchors = document.querySelectorAll('.prose h2[id], .prose h3[id]');
 	const links = document.querySelectorAll('nav.toc ul li a');
 
@@ -107,26 +154,28 @@ const { Content, headings } = await post.render();
 		if (typeof anchors != 'undefined' && anchors != null && typeof links != 'undefined' && links != null) {
 			let scrollTop = window.scrollY;
 
-			// highlight the last scrolled-to: set everything inactive first
 			for (const link of links) {
 				link.classList.add('border-transparent', 'text-inherit');
 				link.classList.remove('bg-[var(--background-surface-color)]', 'border-[var(--soft-border-color)]', 'text-[var(--link-color)]');
 			}
-			// then iterate backwards, on the first match highlight it and break
 			for (var i = anchors.length - 1; i >= 0; i--) {
-				if (scrollTop > anchors[i].offsetTop - 80) {
+				if (scrollTop > anchors[i].offsetTop - 120) {
 					links[i].classList.remove('border-transparent', 'text-inherit');
-					links[i].classList.add('bg-[var(--background-surface-color)]', 'border-[var(--soft-border-color)]', 'text-[var(--link-color)]');
+					links[i].classList.add('bg-[var(--background-surface-color)]', 'border-[var(--soft-border-color)]', 'text-[var(--link-color)]', 'font-semibold');
 					break;
 				}
 			}
 		}
 	}
 
-	window.addEventListener('scroll', (event) => {
-		observeToc(event);
+	window.addEventListener('scroll', () => {
+		observeToc();
+    updateProgressBar();
 	});
-	window.addEventListener('hashchange', (event) => {
-		observeToc(event);
-	});
+  
+  // Re-run on View Transitions navigation
+  document.addEventListener('astro:after-swap', () => {
+    observeToc();
+    updateProgressBar();
+  });
 </script>

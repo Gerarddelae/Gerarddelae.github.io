@@ -2,6 +2,7 @@
 import BaseHead from './components/BaseHead.astro';
 import Header from './components/Header.astro';
 import Footer from './components/Footer.astro';
+import { ViewTransitions } from 'astro:transitions';
 import { loadEnv } from 'vite';
 
 const { GTAG_MEASUREMENT_ID } = loadEnv(process.env.NODE_ENV || 'production', process.cwd(), '');
@@ -9,9 +10,10 @@ const { title, description, image } = Astro.props;
 ---
 
 <!doctype html>
-<html lang='en'>
+<html lang='es'>
 	<head>
 		<BaseHead title={title} description={description} image={image} />
+		<ViewTransitions />
 	</head>
 	<body>
 		<Header/>

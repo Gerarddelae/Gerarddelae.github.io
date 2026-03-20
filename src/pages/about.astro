@@ -3,33 +3,100 @@ import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Ava from '@src/assets/img/ava1.png';
 import Prose from '../components/Prose.astro';
+import ExperienceTimeline from '../components/ExperienceTimeline.astro';
 
 ---
 
 <BaseLayout
-	title="About Me"
-	description="Lorem ipsum dolor sit amet"
+	title="About Me | Gerardo"
+	description="Ingeniero Civil y Desarrollador de Software apasionado por la tecnología y la innovación."
 >
-  <div class='container'>
-		<main class='prose text-lg dark:prose-invert'>
-      <article>
-        <div class='w-full md:flex md:items-center gap-16 mb-10'>
-          <div class="text-pretty leading-9">
-            <h1 class="text-4xl font-bold mb-4">¡Hola! 👋, ¡Soy Gerardo! </h1>
-            <Prose>
-              <div class="text-lg">
-                <p>Ingeniero Civil, Analista y Desarrollador de Software
-                  Apasionado por construir el futuro tanto física como digitalmente, combino mi experiencia en Ingeniería Civil con mis habilidades como Analista y Desarrollador de Software para crear soluciones innovadoras, eficientes y sostenibles. Actualmente me encuentro estudiando temas de Machine Learning para ofrecer soluciones más integrales. Con una sólida base en diseño estructural, gestión de proyectos y desarrollo de software, aporto precisión y capacidades de resolución de problemas, desarrollando aplicaciones robustas que generan impacto.</p>
-              </div>
-            </Prose>
-          </div>
-          <Image src={Ava} alt="Gerardo de la Espriella" width={300}  class="rounded-3xl rotate-3 mx-4 md:mx-0"/>
-        </div>     
-        <div>
+  <div class='container relative py-12'>
+    <!-- Background Decoration -->
+    <div class="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-[100px] rounded-full -z-10"></div>
+    <div class="absolute bottom-40 left-0 w-96 h-96 bg-accent/10 blur-[130px] rounded-full -z-10"></div>
 
+		<main class='max-w-4xl mx-auto'>
+      <article class="animate-in">
+        <div class='w-full md:flex items-start gap-12 mb-20'>
+          <div class="flex-1">
+            <h1 class="text-5xl font-black mb-6 tracking-tight color-text">
+              Más sobre <span class="text-accent">mí</span>
+            </h1>
+            <div class="space-y-6 text-lg text-secondary leading-relaxed">
+              <p>
+                Soy un perfil híbrido que une dos mundos: la <strong class="text-accent">Ingeniería Civil</strong> y el <strong class="text-accent">Desarrollo de Software</strong>. Mi trayectoria comenzó diseñando estructuras físicas, pero mi curiosidad me llevó a construir estructuras digitales.
+              </p>
+              <p>
+                Hoy, aplico la precisión técnica y la capacidad analítica de la ingeniería para resolver problemas complejos a través de código limpio y escalable. Mi enfoque actual está en el ecosistema <strong>Full Stack</strong> (Angular + Spring Boot) y la integración de <strong>Machine Learning</strong> en aplicaciones del mundo real.
+              </p>
+            </div>
+          </div>
+          <div class="relative group mt-8 md:mt-0">
+            <div class="absolute inset-0 bg-accent/20 blur-2xl rounded-3xl scale-95 group-hover:scale-105 transition-transform duration-500"></div>
+            <Image 
+              src={Ava} 
+              alt="Gerardo de la Espriella" 
+              width={320} 
+              class="relative z-10 rounded-3xl border border-white/10 shadow-2xl transition-all duration-500 group-hover:-translate-y-2 group-hover:rotate-2"
+            />
+          </div>
         </div>
-        </article>
+
+        <section class="mb-20">
+          <h2 class="text-3xl font-bold mb-10 text-center">Mi Trayectoria</h2>
+          <ExperienceTimeline />
+        </section>
+
+        <section class="grid md:grid-cols-2 gap-8 mb-20">
+          <div class="card p-8 bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl">
+            <div class="text-3xl mb-4">🎯</div>
+            <h3 class="text-xl font-bold mb-3">Mi Misión</h3>
+            <p class="text-secondary leading-relaxed small">
+              Transformar la complejidad en simplicidad mediante software robusto y eficiente que genere un impacto real en la industria.
+            </p>
+          </div>
+          <div class="card p-8 bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl">
+            <div class="text-3xl mb-4">🧠</div>
+            <h3 class="text-xl font-bold mb-3">Aprendiendo ahora</h3>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="px-3 py-1 bg-accent/10 border border-accent/20 rounded-full text-xs font-semibold text-accent">PyTorch</span>
+              <span class="px-3 py-1 bg-accent/10 border border-accent/20 rounded-full text-xs font-semibold text-accent">NLP</span>
+              <span class="px-3 py-1 bg-accent/10 border border-accent/20 rounded-full text-xs font-semibold text-accent">Next.js</span>
+              <span class="px-3 py-1 bg-accent/10 border border-accent/20 rounded-full text-xs font-semibold text-accent">Docker</span>
+            </div>
+          </div>
+        </section>
       </article>
     </main>
   </div>
 </BaseLayout>
+
+<style>
+  .animate-in {
+    animation: fadeIn 1s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+
+  .text-accent {
+    color: var(--color-accent);
+  }
+
+  .color-text {
+    color: var(--color-text);
+  }
+
+  .card:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-5px);
+    transition: all 0.3s;
+  }
+</style>
