@@ -21,6 +21,17 @@ const { title, description, image = '/syakir.webp' } = Astro.props;
 <link rel='icon' href={Favicon.src} />
 <meta name='generator' content={Astro.generator} />
 
+<!-- Prevent theme flash -->
+<script is:inline>
+(function() {
+	var theme = localStorage.getItem('theme');
+	var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+	if (theme === 'dark' || (!theme && prefersDark)) {
+		document.documentElement.classList.add('dark');
+	}
+})();
+</script>
+
 <!-- Canonical URL -->
 <link rel='canonical' href={canonicalURL} />
 

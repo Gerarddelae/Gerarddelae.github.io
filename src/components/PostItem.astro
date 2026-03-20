@@ -6,27 +6,48 @@ import type { CollectionEntry } from 'astro:content';
 type BlogPost = CollectionEntry<'blog'>;
 const { post }: Record<string, any> | { post: BlogPost } = Astro.props
 ---
-<div class='flex flex-col sm:flex-row gap-2 sm:items-center  border-b py-2 mb-1 capitalize dark:border-b-zinc-700'>        
-  <div class='text-zinc-700 text-sm w-24 dark:text-zinc-300 shrink-0'>
-    <FormattedDate date={post.data.pubDate} />
-  </div>
-  <h3 class='font-medium grow'>
-    <a href={`/${post.slug}/`}>
-      {post.data.title}
-    </a>
-  </h3>
-  <div class='flex gap-2 shrink-0'>
-    {
-      (post.data.tags || [] )?.map((tag: string) => (
-        <a
-          class='border border-zinc-300 dark:border-zinc-700 rounded-2xl
-          text-sm text-zinc-700 dark:text-zinc-300 no-underline px-2 py-0.5
-          transition-all duration-700
-          hover:border-zinc-700 dark:hover:border-zinc-300'
-          href={`/tags/${slugify(tag)}`}>
-          {tag}
-        </a>
-      ))
-    }
-  </div>
+<div style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--color-border); transition: background-color 0.3s;" class="post-item">        
+	<div style="color: var(--color-text-secondary); font-size: 0.875rem; width: 6rem; flex-shrink: 0;">
+		<FormattedDate date={post.data.pubDate} />
+	</div>
+	<h3 style="font-weight: 500; flex: 1;">
+		<a href={`/${post.slug}/`} style="color: var(--color-text); text-decoration: none; transition: color 0.3s;" class="post-link">
+			{post.data.title}
+		</a>
+	</h3>
+	<div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+		{
+			(post.data.tags || [] )?.map((tag: string) => (
+				<a
+					style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; border: 1px solid var(--color-border); color: var(--color-text-secondary); text-decoration: none; transition: all 0.3s;"
+					class="tag-badge"
+					href={`/tags/${slugify(tag)}`}>
+					{tag}
+				</a>
+			))
+		}
+	</div>
 </div>
+
+<style>
+	@media (min-width: 640px) {
+		.post-item {
+			flex-direction: row;
+			align-items: center;
+		}
+	}
+
+	.post-item:hover {
+		background-color: var(--color-bg-secondary);
+		border-radius: 0.5rem;
+	}
+
+	.post-item:hover .post-link {
+		color: var(--color-accent);
+	}
+
+	.tag-badge:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+</style>

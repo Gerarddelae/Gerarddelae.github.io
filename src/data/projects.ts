@@ -1,0 +1,44 @@
+export interface Project {
+	name: string;
+	demoLink: string;
+	tags?: string[];
+	description?: string;
+	postLink?: string;
+	demoLinkRel?: string;
+	stargazers_count?: number;
+	html_url?: string;
+	[key: string]: any;
+}
+
+export const projects: Project[] = [
+	{
+		name: 'MAGUESTIC',
+		description:
+			'Maguestic is a full-stack hotel management application built with Angular and Spring Boot. It provides a comprehensive solution for managing hotel operations including bookings, guests, rooms, and services with a modern and responsive interface.',
+		demoLink: 'https://github.com/Gerarddelae/hotel-spring-angular',
+		tags: ['Angular', 'Spring Boot', 'Full-stack']
+	},
+	{
+		name: 'HOTEL SPA',
+		description:
+			'Hotel SPA is a single-page application (SPA) designed for small hotels looking to efficiently manage guests, bookings, rooms, and other essential operations. The platform provides an intuitive interface for hotel staff to handle daily operations while maintaining a centralized database of all hotel-related information.',
+		demoLink: 'https://github.com/Gerarddelae/hotel-spa',
+		tags: ['SaaS', 'JS']
+	},
+	{
+		name: 'SQL AGENT',
+		description:
+			"The SQL Query Agent is a powerful, AI-assisted tool designed to streamline and optimize database interactions. It allows users to generate, analyze, and refine SQL queries effortlessly using natural language processing (NLP). Whether you're a developer, data analyst, or business user, this tool simplifies complex database operations while ensuring accuracy and efficiency.",
+		demoLink: 'https://github.com/Gerarddelae/Hotel-SQL-Agent',
+		demoLinkRel: 'nofollow noopener noreferrer',
+		tags: ['AI', 'Saas', 'Agent', 'Python']
+	},
+	{
+		name: 'VOXPOPULY',
+		description:
+			'Voxpopuly is an open-source project for collecting, aggregating and visualizing public opinions. It provides lightweight polling and analytics tools to help teams gather quick feedback and derive insights from community responses.',
+		demoLink: 'https://github.com/Gerarddelae/voxpopuly',
+		demoLinkRel: 'nofollow noopener noreferrer',
+		tags: ['Open Source', 'Polling', 'Analytics']
+	}
+];

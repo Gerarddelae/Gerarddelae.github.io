@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import type { Project } from '../pages/projects/projects'
+import type { Project } from '../data/projects'
 import { kFormatter } from '../utils'
 import GithubWhite from '@src/assets/img/github-mark-white.svg';
 import GithubBlack from '@src/assets/img/github-mark.svg';
@@ -8,66 +8,111 @@ import GithubBlack from '@src/assets/img/github-mark.svg';
 const { projects } = Astro.props
 
 ---
-<div class="grid grid-cols-12 gap-5">
-  {
-    projects.map((project: Project) => 
-      <div class="col-span-12 sm:col-span-6 lg:col-span-4 border dark:border-zinc-700 rounded-xl shadow-sm p-5">
-        <div class="flex justify-between items-center">
-          <div class='flex gap-2'>
-            {
-              (project.tags || [] )?.map((tag: string) => (
-                <span
-                  class='border border-zinc-300 dark:border-zinc-700 rounded-2xl
-                    text-sm text-zinc-700 dark:text-zinc-300 no-underline px-2 py-0.5
-                    transition-all duration-700
-                  hover:border-zinc-700 dark:hover:border-zinc-300'
-                  >
-                  {tag}
-                </span>
-              ))
-            }
-          </div>
+<div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem;">
+	{
+		projects.map((project: Project) => 
+			<div style="grid-column: span 12; border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1.25rem; background-color: var(--color-surface); transition: all 0.3s;" class="project-card">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+					<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+						{
+							(project.tags || [] )?.map((tag: string) => (
+								<span
+									style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; border: 1px solid var(--color-border); color: var(--color-text-secondary); transition: all 0.3s;"
+									class="tag-badge"
+								>
+									{tag}
+								</span>
+							))
+						}
+					</div>
 
-          {project.stargazers_count !== undefined && (
-            <div class='shrink-0'>
-              <a
-                href={project.html_url}
-                target="_blank"
-                class='border border-zinc-300 dark:border-zinc-700 rounded-2xl
-                    text-xs text-zinc-700 dark:text-zinc-300 no-underline px-2 py-0.5
-                    transition-all duration-700
-                  hover:border-zinc-700 dark:hover:border-zinc-300
-                    flex items-center gap-1
-              '>
-                <Image src={GithubBlack} height={12} class='dark:hidden' alt='Github stars' />
-                <Image src={GithubWhite} height={12} class='hidden dark:block' alt='Github stars' />
-                {kFormatter(project.stargazers_count)} stars
-              </a>
-            </div>
-          )}
-        </div>
-        <h3 class="font-semibold my-2">
-          <a class="underline" href={project.demoLink} target="_blank" rel={project.demoLinkRel}>{project.name}</a>
-        </h3>
-        <div class="line-clamp-2 text-zinc-600 dark:text-zinc-300 mb-4 min-h-[50px]">
-          <p>{project.description}</p>
-        </div>
-        <div class="flex justify-end gap-3">
-          {
-            project.postLink &&
-            <a class="underline flex items-center gap-2" href={project.postLink}>
-              Article
-            </a>
-          }
-          {
-            project.demoLink &&  // This line adds the conditional check for the Demo link
-            <a class="underline flex items-center gap-2" href={project.demoLink} target="_blank" rel={project.demoLinkRel}>
-              Demo 
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-            </a>
-          }
-        </div>
-      </div>
-    )
-  }
+					{project.stargazers_count !== undefined && (
+						<div style="flex-shrink: 0;">
+							<a
+								href={project.html_url}
+								target="_blank"
+								style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; border: 1px solid var(--color-border); color: var(--color-text-secondary); text-decoration: none; transition: all 0.3s;"
+								class="stars-badge"
+							>
+								<Image src={GithubBlack} height={12} class='dark:hidden' alt='Github stars' />
+								<Image src={GithubWhite} height={12} class='hidden dark:block' alt='Github stars' />
+								{kFormatter(project.stargazers_count)}
+							</a>
+						</div>
+					)}
+				</div>
+				<h3 style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.125rem; margin-bottom: 0.5rem;">
+					<a href={project.demoLink} target="_blank" rel={project.demoLinkRel} style="color: var(--color-text); text-decoration: none; position: relative;" class="project-link">
+						{project.name}
+					</a>
+				</h3>
+				<div style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--color-text-secondary); margin-bottom: 1rem; min-height: 3rem;">
+					<p>{project.description}</p>
+				</div>
+				<div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: auto;">
+					{
+						project.postLink &&
+						<a style="font-size: 0.875rem; color: var(--color-text-secondary); text-decoration: none; transition: color 0.3s;" class="action-link" href={project.postLink}>
+							Article
+						</a>
+					}
+					{
+						project.demoLink &&
+						<a style="font-size: 0.875rem; color: var(--color-text-secondary); text-decoration: none; transition: color 0.3s; display: flex; align-items: center; gap: 0.25rem;" class="action-link" href={project.demoLink} target="_blank" rel={project.demoLinkRel}>
+							Demo
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+						</a>
+					}
+				</div>
+			</div>
+		)
+	}
 </div>
+
+<style>
+	@media (min-width: 640px) {
+		.project-card {
+			grid-column: span 6 !important;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.project-card {
+			grid-column: span 4 !important;
+		}
+	}
+
+	.project-card:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05), 0 0 40px -10px var(--color-accent);
+	}
+
+	.project-card:hover .tag-badge {
+		border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+		color: var(--color-accent);
+	}
+
+	.project-card:hover .stars-badge {
+		border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+		color: var(--color-accent);
+	}
+
+	.project-link::after {
+		content: '';
+		position: absolute;
+		bottom: -2px;
+		left: 0;
+		width: 0;
+		height: 2px;
+		background-color: var(--color-accent);
+		transition: width 0.3s;
+	}
+
+	.project-card:hover .project-link::after {
+		width: 100%;
+	}
+
+	.action-link:hover {
+		color: var(--color-accent) !important;
+	}
+</style>

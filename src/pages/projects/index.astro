@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProjectList from '../../components/ProjectList.astro';
-import { projects } from './projects';
+import { projects } from '../../data/projects';
 
+const allProjects = projects;
 ---
 
 <BaseLayout
@@ -12,8 +13,8 @@ import { projects } from './projects';
   <div class='container'>
     <div class="mb-10">
       <h1 class="text-3xl font-bold mb-2">All My Projects</h1>
-      <p class="text-zinc-700 dark:text-zinc-300 text-lg">All my project portfolio from real projects to open source projects.</p>
+      <p class="text-[var(--color-text-secondary)] text-lg">All my project portfolio from real projects to open source projects.</p>
     </div>
-    <ProjectList projects={projects}/>
+    <ProjectList projects={allProjects}/>
   </div>
 </BaseLayout>
