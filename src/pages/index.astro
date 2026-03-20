@@ -26,13 +26,13 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a: 
 			<div class="blob blob-3"></div>
 		</div>
 
-		<div class='w-full md:flex md:items-center gap-16 mb-16 pt-8' style="position: relative; z-index: 2;">
+		<div class='w-full md:flex md:items-center gap-8 lg:gap-16 mb-16 pt-8' style="position: relative; z-index: 2;">
 			<div style="flex: 1;">
-				<h1 style="font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 800; line-height: 1.2; margin-bottom: 1.5rem; color: var(--color-text); letter-spacing: -0.02em;">
+				<h1 style="font-family: 'Outfit', sans-serif; font-size: clamp(2.2rem, 8vw, 3.5rem); font-weight: 800; line-height: 1.2; margin-bottom: 1.5rem; color: var(--color-text); letter-spacing: -0.02em;">
 					¡Hola! 👋, <span class="gradient-text">Soy Gerardo!</span>
 				</h1>
 				<div style="margin-bottom: 1.5rem;">
-					<span id="typing-role" style="font-size: 1.25rem; font-weight: 600; color: var(--color-accent); text-transform: uppercase; letter-spacing: 0.05em;"></span>
+					<span id="typing-role" style="font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 600; color: var(--color-accent); text-transform: uppercase; letter-spacing: 0.05em;"></span>
 				</div>
 				<Prose>
 					<div style="font-size: 1.125rem; line-height: 1.7; margin-top: 1rem;">
@@ -52,9 +52,9 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a: 
 					</a>
 				</div>
 			</div>
-			<div class="hero-image-container">
+			<div class="hero-image-container mx-auto max-w-[280px] md:max-w-none mt-10 md:mt-0">
 				<div class="image-glow"></div>
-				<Image src={Ava} alt="Gerardo de la Espriella" width={320} loading="eager" class="hero-image"/>
+				<Image src={Ava} alt="Gerardo de la Espriella" width={320} loading="eager" class="hero-image w-full h-auto"/>
 				<div class="image-decoration-1"></div>
 				<div class="image-decoration-2"></div>
 			</div>
@@ -63,9 +63,9 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a: 
 		<main style="position: relative; z-index: 2;">
 			<Skills />
 			
-			<div style="margin-top: 4rem; margin-bottom: 4rem;">
+			<div class="my-10 md:my-16">
 				<div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--color-border); margin-bottom: 0.25rem;">
-					<h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--color-text);">Artículos Recientes</h2>
+					<h2 class="text-lg md:text-xl font-bold mb-3 text-[var(--color-text)]">Artículos Recientes</h2>
 					<a href="/posts/" style="display: inline-block; padding: 0.5rem 0; text-decoration: underline; color: var(--color-text-secondary);">Todos los artículos &raquo;</a>
 				</div>
 				<div>
@@ -74,9 +74,9 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a: 
 					))}      
 				</div>
 			</div>
-			<div>
+			<div class="my-10 md:my-16">
 				<div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-					<h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--color-text);">Mis Proyectos</h2>
+					<h2 class="text-lg md:text-xl font-bold mb-3 text-[var(--color-text)]">Mis Proyectos</h2>
 					<a href="/projects/" style="display: inline-block; padding: 0.5rem 0; text-decoration: underline; color: var(--color-text-secondary);">Todos los proyectos &raquo;</a>
 				</div>
 				<ProjectList projects={top6Projects}/>
@@ -94,13 +94,13 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a: 
 		'Apasionado por ML'
 	];
 	
-	const typingElement = document.getElementById('typing-role');
 	let roleIndex = 0;
 	let charIndex = 0;
 	let isDeleting = false;
-	let typingTimeout: ReturnType<typeof setTimeout>;
+	let typingTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	function typeRole() {
+        const typingElement = document.getElementById('typing-role');
 		if (!typingElement) return;
 		
 		const currentRole = roles[roleIndex];
@@ -127,10 +127,24 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a: 
 		typingTimeout = setTimeout(typeRole, typeSpeed);
 	}
 
-	setTimeout(typeRole, 1000);
+    function initTyping() {
+        if (typingTimeout) clearTimeout(typingTimeout);
+        // Reset local state on navigation
+        roleIndex = 0;
+        charIndex = 0;
+        isDeleting = false;
+
+        const typingElement = document.getElementById('typing-role');
+        if (typingElement) {
+            typingElement.textContent = '';
+            typingTimeout = setTimeout(typeRole, 1000);
+        }
+    }
+
+	document.addEventListener('astro:page-load', initTyping);
 
 	document.addEventListener('astro:before-swap', () => {
-		clearTimeout(typingTimeout);
+		if (typingTimeout) clearTimeout(typingTimeout);
 	});
 </script>
 
