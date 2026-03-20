@@ -8,111 +8,235 @@ import GithubBlack from '@src/assets/img/github-mark.svg';
 const { projects } = Astro.props
 
 ---
-<div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem;">
+<div class="projects-grid">
 	{
 		projects.map((project: Project) => 
-			<div style="grid-column: span 12; border: 1px solid var(--color-border); border-radius: 0.75rem; padding: 1.25rem; background-color: var(--color-surface); transition: all 0.3s;" class="project-card">
-				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-					<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-						{
-							(project.tags || [] )?.map((tag: string) => (
-								<span
-									style="font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; border: 1px solid var(--color-border); color: var(--color-text-secondary); transition: all 0.3s;"
-									class="tag-badge"
-								>
-									{tag}
-								</span>
-							))
-						}
-					</div>
+			<div class="project-card">
+				<a 
+					href={project.demoLink} 
+					target="_blank" 
+					rel={project.demoLinkRel} 
+					class="card-link"
+				>
+					<div class="project-card-inner">
+						<div class="project-header">
+							<div class="tags-row">
+								{
+									(project.tags || [] )?.map((tag: string) => (
+										<span class="tag-badge">
+											{tag}
+										</span>
+									))
+								}
+							</div>
 
-					{project.stargazers_count !== undefined && (
-						<div style="flex-shrink: 0;">
-							<a
-								href={project.html_url}
-								target="_blank"
-								style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px; border: 1px solid var(--color-border); color: var(--color-text-secondary); text-decoration: none; transition: all 0.3s;"
-								class="stars-badge"
-							>
-								<Image src={GithubBlack} height={12} class='dark:hidden' alt='Github stars' />
-								<Image src={GithubWhite} height={12} class='hidden dark:block' alt='Github stars' />
-								{kFormatter(project.stargazers_count)}
-							</a>
+							{project.stargazers_count !== undefined && (
+								<div 
+									class="stars-badge" 
+									onclick={`window.open('${project.html_url}', '_blank', 'noopener,noreferrer')`}
+								>
+									<Image src={GithubBlack} height={14} class='dark:hidden' alt='Github stars' />
+									<Image src={GithubWhite} height={14} class='hidden dark:block' alt='Github stars' />
+									<span>{kFormatter(project.stargazers_count)}</span>
+								</div>
+							)}
 						</div>
-					)}
-				</div>
-				<h3 style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.125rem; margin-bottom: 0.5rem;">
-					<a href={project.demoLink} target="_blank" rel={project.demoLinkRel} style="color: var(--color-text); text-decoration: none; position: relative;" class="project-link">
-						{project.name}
-					</a>
-				</h3>
-				<div style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--color-text-secondary); margin-bottom: 1rem; min-height: 3rem;">
-					<p>{project.description}</p>
-				</div>
-				<div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: auto;">
-					{
-						project.postLink &&
-						<a style="font-size: 0.875rem; color: var(--color-text-secondary); text-decoration: none; transition: color 0.3s;" class="action-link" href={project.postLink}>
-							Article
-						</a>
-					}
-					{
-						project.demoLink &&
-						<a style="font-size: 0.875rem; color: var(--color-text-secondary); text-decoration: none; transition: color 0.3s; display: flex; align-items: center; gap: 0.25rem;" class="action-link" href={project.demoLink} target="_blank" rel={project.demoLinkRel}>
-							Demo
-							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-						</a>
-					}
-				</div>
+
+						<div class="project-content">
+							<h3 class="project-title">
+								{project.name}
+								<svg class="external-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+							</h3>
+							<p class="project-description">{project.description}</p>
+						</div>
+
+						<div class="project-footer">
+							{
+								project.postLink &&
+								<span class="action-link">
+									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+									Article
+								</span>
+							}
+						</div>
+					</div>
+				</a>
 			</div>
 		)
 	}
 </div>
 
 <style>
+	.projects-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
 	@media (min-width: 640px) {
-		.project-card {
-			grid-column: span 6 !important;
+		.projects-grid {
+			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 
 	@media (min-width: 1024px) {
-		.project-card {
-			grid-column: span 4 !important;
+		.projects-grid {
+			grid-template-columns: repeat(3, 1fr);
 		}
 	}
 
+	.project-card {
+		position: relative;
+		border: 1px solid var(--color-border);
+		border-radius: 1rem;
+		background-color: var(--color-surface);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		overflow: hidden;
+		height: 100%;
+	}
+
 	.project-card:hover {
-		transform: translateY(-4px);
-		box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05), 0 0 40px -10px var(--color-accent);
+		transform: translateY(-6px);
+		border-color: var(--color-accent);
+		box-shadow: 
+			0 20px 25px -5px rgb(0 0 0 / 0.1), 
+			0 8px 10px -6px rgb(0 0 0 / 0.1),
+			0 0 60px -15px var(--color-accent);
+	}
+
+	.card-link {
+		display: flex;
+		flex-direction: column;
+		text-decoration: none;
+		color: inherit;
+		height: 100%;
+		width: 100%;
+		outline: none;
+	}
+
+	.project-card-inner {
+		padding: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 220px;
+	}
+
+	.project-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 1rem;
+		gap: 0.75rem;
+	}
+
+	.tags-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.tag-badge {
+		font-size: 0.7rem;
+		font-weight: 500;
+		padding: 0.25rem 0.625rem;
+		border-radius: 9999px;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		background: color-mix(in srgb, var(--color-border) 30%, transparent);
+		transition: all 0.3s;
 	}
 
 	.project-card:hover .tag-badge {
-		border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+		border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
 		color: var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+	}
+
+	.stars-badge {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		padding: 0.25rem 0.625rem;
+		border-radius: 9999px;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		background: color-mix(in srgb, var(--color-border) 30%, transparent);
+		flex-shrink: 0;
+		transition: all 0.3s;
+		cursor: pointer;
+		position: relative;
+		z-index: 2;
 	}
 
 	.project-card:hover .stars-badge {
-		border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+		border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+		color: var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+	}
+
+	.project-content {
+		flex: 1;
+	}
+
+	.project-title {
+		font-family: 'Outfit', sans-serif;
+		font-weight: 600;
+		font-size: 1.25rem;
+		margin: 0 0 0.75rem 0;
+		color: var(--color-text);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		transition: color 0.3s;
+	}
+
+	.project-card:hover .project-title {
 		color: var(--color-accent);
 	}
 
-	.project-link::after {
-		content: '';
-		position: absolute;
-		bottom: -2px;
-		left: 0;
-		width: 0;
-		height: 2px;
-		background-color: var(--color-accent);
-		transition: width 0.3s;
+	.external-icon {
+		opacity: 0;
+		transform: translate(-4px, 4px);
+		transition: all 0.3s;
+		flex-shrink: 0;
 	}
 
-	.project-card:hover .project-link::after {
-		width: 100%;
+	.project-card:hover .external-icon {
+		opacity: 1;
+		transform: translate(0, 0);
 	}
 
-	.action-link:hover {
-		color: var(--color-accent) !important;
+	.project-description {
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		line-height: 1.6;
+		margin: 0;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.project-footer {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+	}
+
+	.action-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--color-text-secondary);
+		transition: color 0.3s;
+	}
+
+	.project-card:hover .action-link {
+		color: var(--color-accent);
 	}
 </style>
