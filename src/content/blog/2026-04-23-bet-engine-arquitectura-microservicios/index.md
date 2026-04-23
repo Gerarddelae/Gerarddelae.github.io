@@ -402,7 +402,6 @@ La arquitectura hexagonal es como un enchufe:
 
 ![alt text](7-1.png)
 
-
 El dispositivo (caso de uso) no sabe si está conectado a Postgres, MongoDB, o un archivo CSV. Solo sabe que tiene un enchufe (puerto). Tú eliges el cable (adaptador).
 
 ---
@@ -443,6 +442,64 @@ export interface MatchEvent {
 
 ---
 
+### Fase 1: Infraestructura Base
+
+Antes de escribir lógica de negocio, necesitaba un entorno reproducible con todos los servicios externos.
+
+```
+├── docker-compose.yml
+├── infra/
+│   ├── kafka/create-topics.sh
+│   └── postgres/init/01-init-schemas.sql
+├── apps/
+│   ├── api-gateway/      # Puerto 3000
+│   ├── odds-engine/       # Puerto 3001
+│   ├── bet-service/      # Puerto 3002
+│   └── settlement/       # Puerto 3003
+└── packages/shared-kernel/
+```
+
+**Docker Compose** levanta: Zookeeper, Kafka (single-broker), PostgreSQL, Redis.
+
+**Topics de Kafka** se crean automáticamente al inicio:
+
+- `match.events` - Eventos de partido
+- `odds.updated` - Cuotas actualizadas
+- `bet.placed` - Apuestas creadas
+- `bet.settled` - Apuestas liquidadas
+
+**Schemas PostgreSQL** inicializados:
+
+- `odds_engine`
+- `bet_service`
+- `settlement`
+
+Cada servicio tiene:
+
+- `GET /health` - Health check básico
+- Migrations TypeORM para su schema
+- Scaffolding NestJS mínimo (app.module.ts + main.ts)
+
+**Pipeline CI** en GitHub Actions:
+
+```yaml
+jobs:
+  - lint
+  - typecheck
+  - build
+  - test
+```
+
+Scripts en package.json raíz:
+
+- `pnpm docker:up` / `pnpm docker:down`
+- `pnpm docker:reset`
+- `pnpm docker:topics`
+
+**Resultado:** Puedo levantar todo localmente con `pnpm docker:up` y tener Kafka, PostgreSQL y Redis listos para desarrollo.
+
+---
+
 ### Fase 2: Odds Engine (Primer Servicio)
 
 ```
@@ -474,69 +531,263 @@ class ProcessMatchEventUseCase {
 
 ---
 
-### Fase 6: Bet Service (Segundo Servicio)
+### Fase 3: Odds Engine — Cálculo y Publicación de Cuotas
 
-Agregué un nuevo servicio con su propia estructura:
+Con los eventos procesándose, era hora de calcular cuotas. El odds-engine ahora no solo persiste estado, sino que **recalcula probabilidades y las publica** para que bet-service pueda mostrarlas.
 
-```
-apps/bet-service/src/
-├── domain/
-│   └── ports/
-│       ├── bet-repository.port.ts    ← Puerto nuevo (no existe en odds-engine)
-│       ├── odds-provider.port.ts     ← Mismo concepto, diferente servicio
-│       └── event-publisher.port.ts   ← Puerto para publicar a Kafka
-├── application/
-│   └── use-cases/
-│       ├── place-bet.use-case.ts      ← Lógica de negocio
-│       └── get-live-matches.use-case.ts
-└── infrastructure/
-    └── adapters/outbound/
-        ├── postgres-bet.repository.ts    ← Adaptador PostgreSQL
-        ├── redis-odds.provider.ts      ← Adaptador Redis
-        └── kafka-event.publisher.ts     ← Adaptador Kafka
-```
-
-**Nota importante:** Los puertos `bet-repository.port.ts` y `odds-provider.port.ts` son **propios de bet-service**. No existen en odds-engine. Cada servicio define sus propios contratos según sus necesidades.
-
----
-
-### Fase 8: Settlement (Tercer Servicio)
-
-Settlement necesitaba acceder a datos de Bet Service, pero **no可以直接amente**:
-
-```
-┌────────────────────────────────────────────────────────┐
-│ Settlement Service                                     │
-│                                                        │
-│  domain/ports/                                         │
-│  └── bet-service-client.port.ts  ← Puerto propio      │
-│                                                        │
-│  ¿Cómo obtiene las apuestas de otro servicio?         │
-│  No llama a la base de datos directamente              │
-│  Usa un cliente HTTP al bet-service                    │
-└────────────────────────────────────────────────────────┘
-```
+**Nuevo componente**: `OddsCalculatorService`
 
 ```typescript
-// apps/settlement/src/domain/ports/bet-service-client.port.ts
-export interface BetServiceClientPort {
-	getBetsForMatch(matchId: string, status: 'OPEN'): Promise<BetServiceBet[]>;
-	settleBet(betId: string, result: 'WON' | 'LOST'): Promise<void>;
-}
-
-// apps/settlement/src/infrastructure/adapters/outbound/http/bet-service-http.client.ts
-@Injectable()
-export class HttpBetServiceClient implements BetServiceClientPort {
-	async getBetsForMatch(matchId: string, status: 'OPEN'): Promise<BetServiceBet[]> {
-		// Hace HTTP GET a bet-service
-		return this.httpClient.get(`/internal/bets?matchId=${matchId}&status=${status}`);
+class OddsCalculatorService {
+	calculateOdds(match: MatchState): OddsSnapshot {
+		// Probabilidades base: local 45%, empate 25%, visitante 30%
+		// Ajuste por diferencia de goles y minuto
+		// Margen (vig) del 5%
+		// Normalización y clamps
 	}
 }
 ```
 
+**Nuevo caso de uso**: `RecalculateOddsUseCase`
+
+```typescript
+class RecalculateOddsUseCase {
+	async execute(matchId: string): Promise<void> {
+		const odds = this.calculator.calculateOdds(matchState);
+		await this.publisher.publish({ matchId, odds, triggeredByEventId });
+	}
+}
+```
+
+**Publicación dual**:
+
+- **Redis**: key `odds:{matchId}` con TTL de 300s — bet-service consulta aquí
+- **Kafka**: topic `odds.updated` — notificación para servicios interesados
+
+**Flujo**:
+
+```
+match.events (GOAL) → MatchEventsConsumer → ProcessMatchEventUseCase →
+  → (status: processed) → RecalculateOddsUseCase →
+  → Redis + Kafka
+```
+
+**Limpieza al terminar**: Cuando llega `MATCH_END`, se borra la key `odds:{matchId}` de Redis para que el partido no aparezca en `/matches/live`.
+
+---
+
+### Fase 4: Simulador CLI — Generación de Eventos
+
+Para probar todo el sistema sin un proveedor real, creé un simulador CLI standalone:
+
+```
+simulator/
+├── src/
+│   ├── commands/
+│   │   ├── list-scenarios.ts
+│   │   └── simulate.ts
+│   ├── adapters/
+│   │   ├── scenario-event.mapper.ts
+│   │   └── kafka-producer.service.ts
+│   └── scenarios/
+│       ├── normal-match.json
+│       └── high-volatility.json
+```
+
+**Escenarios predefinidos**:
+
+- `normal-match`: Partido estándar, local gana 1-0 con gol en min 23
+- `high-volatility`: Remontada, visitante 2-0, local con roja, luego gana 3-2
+
+**Uso**:
+
+```bash
+pnpm --filter @betting-engine/simulator simulate -- --scenario normal-match --speed 60x
+pnpm --filter @betting-engine/simulator simulate -- --scenario high-volatility --speed 60x --fresh-match-ids
+```
+
+El flag `--fresh-match-ids` regenera UUIDs en memoria para evitar colisiones entre corridas.
+
+---
+
+### Fase 5: API Gateway — Punto Único de Entrada
+
+La API Gateway es el **único punto de entrada** para todos los clientes. Nunca me comuniqué directamente con los microservicios desde el exterior.
+
+```
+apps/api-gateway/src/
+├── domain/ports/
+│   ├── auth-provider.port.ts
+│   ├── rate-limiter.port.ts
+│   └── service-router.port.ts
+├── application/
+│   └── use-cases/
+│       └── proxy-request.use-case.ts
+└── infrastructure/
+    ├── adapters/
+    │   ├── jwt-auth.adapter.ts
+    │   ├── http-service-router.adapter.ts
+    │   └── redis-rate-limiter.adapter.ts
+    └── config/
+        └── services.config.ts
+```
+
+**Responsabilidades**:
+
+- **JWT Auth**: Validar tokens de usuarios
+- **Rate Limiting**: Redis comparte contadores por usuario/IP
+- **Proxy**: Forward a servicios internos (bet-service, odds-engine, settlement)
+
+```typescript
+@Controller(':service/*')
+export class GatewayController {
+	@All(':path')
+	async proxyRequest(@Param() params, @Request() req) {
+		// 1. Validar JWT
+		// 2. Verificar rate limit
+		// 3. Forward al servicio
+		// 4. Retornar respuesta
+	}
+}
+```
+
+**WebSocket** para streaming de cuotas en tiempo real (`OddsStreamGateway`).
+
+---
+
+### Fase 6: Bet Service — MVP
+
+Bet Service maneja el catálogo de partidos y el registro de apuestas:
+
+```
+apps/bet-service/src/
+├── domain/ports/
+│   ├── bet-repository.port.ts
+│   ├── odds-provider.port.ts
+│   └── user-repository.port.ts
+├── application/
+│   └── use-cases/
+│       ├── place-bet.use-case.ts
+│       └── get-live-matches.use-case.ts
+└── infrastructure/
+    └── adapters/outbound/
+        ├── postgres-bet.repository.ts
+        ├── redis-odds.provider.ts
+        └── kafka-event.publisher.ts
+```
+
+**Endpoints**:
+
+- `GET /matches/live` — Partidos activos con cuotas de Redis
+- `POST /bets` — Crear apuesta (valida saldo, deduce stake)
+
+**Flujo**:
+
+```
+1. Bet Service → Redis get odds:{matchId} → devuelve cuotas
+2. Usuario → POST /bets (selection, stakeCents)
+3. PlaceBetUseCase.execute()
+   ├── Valida usuario existe y tiene saldo suficiente
+   ├── Obtiene cuotas de Redis → valida no expired (5 min TTL)
+   ├── Calcula payout = stake × acceptedOdds
+   ├── Deduce balance del usuario
+   └── Guarda apuesta (status: OPEN)
+```
+
+---
+
+### Fase 7: Bet Service — Publicación y Endpoints Internos
+
+El Bet Service ya existía, pero para que Settlement pudiera funcionar, necesitaba dos cosas adicionales: **publicar eventos a Kafka** y **exponer endpoints internos** para consultar y liquidar apuestas.
+
+**Kafka client** en app.module.ts:
+
+```typescript
+ClientsModule.register([
+	{
+		name: 'KAFKA_CLIENT',
+		transport: Transport.KAFKA,
+		options: {
+			client: { brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'] },
+			producer: { allowAutoTopicCreation: false }
+		}
+	}
+]);
+```
+
+**PlaceBetUseCase** ahora publica a Kafka:
+
+```typescript
+private async publishBetPlacedEvent(bet: Bet): Promise<void> {
+  if (!this.kafkaClient) {
+    this.logger.warn('Kafka client not available, skipping bet.placed event');
+    return;
+  }
+  const event = { betId: bet.id, userId: bet.userId, matchId: bet.matchId, selection: bet.selection, acceptedOdds: bet.acceptedOdds, stakeCents: bet.stakeCents, timestamp: new Date().toISOString() };
+  this.kafkaClient.emit('bet.placed', { key: bet.userId, value: event });
+}
+```
+
+**InternalBetsController** para Settlement:
+
+```typescript
+@Controller('internal')
+export class InternalBetsController {
+  @Get('bets')
+  async getBets(@Query('matchId') matchId?: string, @Query('status') status?: BetStatus): Promise<Bet[]>
+
+  @Patch('bets/:betId/settle')
+  async settleBet(@Param('betId') betId: string, @Body() dto: SettleBetDto): Promise<{ message: string }>
+}
+```
+
+---
+
+### Fase 8: Settlement — Liquidación Automática
+
+Settlement consume `MATCH_END` y liquida todas las apuestas del partido automáticamente:
+
+```
+apps/settlement/src/
+├── infrastructure/adapters/inbound/kafka/
+│   ├── match-events.consumer.ts    // Consume MATCH_END
+│   └── bet-placed.consumer.ts      // Cachea apuestas
+├── application/use-cases/
+│   └── settle-match.use-case.ts    // Lógica de liquidación
+└── infrastructure/adapters/outbound/
+    ├── http/bet-service-http.client.ts  // Consulta/actualiza apuestas
+    └── postgres/processed-match.repository.ts  // Idempotencia
+```
+
+**MatchEventsConsumer**:
+
+```typescript
+@EventPattern('match.events')
+async handleMatchEvent(@Payload() payload: unknown, @Ctx() context: KafkaContext) {
+  const event = payload as MatchEvent;
+  if (event.type !== 'MATCH_END') return;
+  if (await this.processedMatchRepository.exists(event.matchId)) return;
+  await this.settleMatchUseCase.execute(event);
+}
+```
+
+**SettleMatchUseCase**:
+
+```typescript
+async execute(input: SettleMatchInput): Promise<SettleMatchOutput> {
+  // 1. GET /internal/bets?matchId={id}&status=OPEN
+  // 2. Evaluar: HOME + HOME_WIN = GANA, DRAW + DRAW = GANA, etc.
+  // 3. PATCH /internal/bets/:id/settle (result: WON/LOST)
+  // 4. Publicar bet.settled a Kafka
+  // 5. Guardar en processed_matches
+}
+```
+
+**Idempotencia**: Tabla `processed_matches` garantiza que cada partido se liquida exactamente una vez.
+
 **¿Por qué HTTP en lugar de Kafka?**
 
-settlement necesita **respuestas síncronas**. Cuando llega un `MATCH_END`, Settlement debe:
+Settlement necesita **respuestas síncronas**. Cuando llega un `MATCH_END`, Settlement debe:
 
 1. Preguntar: "¿qué apuestas tiene este partido?"
 2. Recibir la lista
@@ -548,29 +799,28 @@ Kafka es mejor para eventos **unidireccionales**. Para request/response entre se
 
 ### Fase 9: Observabilidad (Cross-Cutting)
 
-La observabilidad es un ejemplo de **código transversal** (cross-cutting concern) que atraviesa todos los servicios:
+La observabilidad atraviesa todos los servicios sin modificar lógica de negocio:
 
 ```
 packages/observability/
 ├── src/
 │   ├── index.ts                  # Métricas exportadas
 │   │   ├── httpRequestDuration   # Histogram
-│   │   ├── httpRequestTotal       # Counter
+│   │   ├── httpRequestTotal      # Counter
 │   │   └── kafkaMessagesProcessed # Counter
 │   └── metrics.interceptor.ts     # Interceptor reusable
 ```
 
-**¿Cómo se agregó sin modificar la lógica de negocio?**
+**Agregar a cualquier servicio** — solo una línea:
 
 ```typescript
-// En cada app.module.ts, solo se agregó:
 {
   provide: APP_INTERCEPTOR,
   useClass: MetricsInterceptor,  // ← Una línea
 }
 ```
 
-El interceptor intercepta todas las peticiones HTTP y registra métricas. Los casos de uso no saben que esto existe.
+Los casos de uso no saben que esto existe.
 
 ---
 
