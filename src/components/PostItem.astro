@@ -52,8 +52,8 @@ const { title, pubDate, tags, coverImage } = post.data;
 			)}
 		</div>
 
-		<div class="flex items-center justify-between mt-auto">
-			<div class="flex gap-2">
+		<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-auto">
+			<div class="flex flex-wrap gap-2 max-w-[70%]">
 				{
 					(tags || [] )?.map((tag: string) => (
 						<a
@@ -65,7 +65,7 @@ const { title, pubDate, tags, coverImage } = post.data;
 				}
 			</div>
 			
-			<span class="text-indigo-600 dark:text-indigo-400 font-semibold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform duration-300">
+			<span class="text-indigo-600 dark:text-indigo-400 font-semibold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform duration-300 shrink-0">
 				Leer más 
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
 			</span>
