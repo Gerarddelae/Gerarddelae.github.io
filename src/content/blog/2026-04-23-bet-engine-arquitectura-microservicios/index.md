@@ -1071,6 +1071,93 @@ El proyecto está completo funcionalmente, pero para producción necesitarías:
 - [ ] Graceful shutdown
 - [ ] Retry logic con exponential backoff
 
+## Spec Driven Development Asistido con IA: Bitácoras y Planificación Central
+
+Una de las lecciones más valiosas de este proyecto no fue técnica, sino metodológica. Cuando empecé a usar IA para asistir en el desarrollo, me di cuenta de un problema fundamental: **sin un registro claro de decisiones y contexto, la IA trabaja con información incompleta, lo que lleva a soluciones subóptimas o inconsistentes**.
+
+La solución que implementé fue un sistema de **bitácoras por fase** relacionado con una **planificación central**, que funcionó como la memoria del proyecto.
+
+### El Problema: IA sin Contexto
+
+Le pides a la IA que te ayude con una función, te genera código, y cuando lo integras descubres que no sabe que ya tienes algo similar en otro servicio, usa convenciones diferentes, o ignora decisiones que tomaste antes. Cada conversación con IA es un **universo paralelo**: no tiene memoria más allá del contexto inmediato.
+
+### La Solución: Bitácoras por Fase + Planificación Central
+
+```
+docs/
+├── DEVELOPMENT.md                    # Plan de desarrollo general
+├── CRONOLOGIA_IMPLEMENTACION.md     # Historia cronológica
+├── PHASE0_SUMMARY.md                # Setup inicial
+├── PHASE1_SUMMARY.md                # Odds Engine - eventos
+├── PHASE2_SUMMARY.md                # Odds Engine - cuotas
+├── PHASE3_SUMMARY.md                # Simulador CLI
+├── PHASE4_SUMMARY.md                # API Gateway
+├── PHASE5_SUMMARY.md                # Bet Service MVP
+├── PHASE6_SUMMARY.md                # Bet Service - Kafka
+├── PHASE7_SUMMARY.md                # Settlement
+├── PHASE8_SUMMARY.md                # Observabilidad
+└── PHASE9_SUMMARY.md                # Cross-cutting
+```
+
+Cada `PHASE*N*_SUMMARY.md` documenta:
+
+- **Objetivo**: Qué se buscaba implementar
+- **Implementado**: Lo que realmente se hizo
+- **Archivos Clave**: Lista de archivos relevantes
+- **Scripts Actualizados**: Comandos disponibles
+- **Validación Ejecutada**: Tests y verificaciones realizadas
+- **Notas Operativas**: Problemas encontrados y soluciones
+- **Fuera de Alcance**: Qué no se incluyó
+- **Siguientes Pasos**: Recomendaciones para la siguiente fase
+
+### Cómo Usar las Bitácoras con IA
+
+El secreto está en **incluir contexto relevante en cada prompt**:
+
+**SIN contexto:**
+
+```
+"Implementa el caso de uso para registrar una apuesta"
+```
+
+**CON contexto:**
+
+```
+"Implementa PlaceBetUseCase en bet-service (fase 5-6).
+
+Siguiendo PHASE5_SUMMARY.md y PHASE6_SUMMARY.md:
+- Usa arquitectura hexagonal: caso de uso conoce puertos, no adaptadores
+- Convenciones del proyecto en DEVELOPMENT.md
+- Cuotas vienen de Redis (ver PHASE2.decisions)
+- Validar que cuota no exceda 5 min TTL
+- Publicar bet.placed a Kafka después de persistir (ver PHASE6)
+
+Puerto existente: application/use-cases/place-bet.use-case.ts (skeleton)
+Patrón a seguir: process-match-event.use-case.ts de odds-engine
+```
+
+### Beneficios Medibles
+
+| Métrica                    | Sin Bitácora | Con Bitácora |
+| -------------------------- | ------------ | ------------ |
+| Iteraciones para correcto  | 3-4          | 1-2          |
+| Inconsistencias detectadas | 2-3/fase     | 0-1/fase     |
+| Tiempo total desarrollo    | ~40 horas    | ~28 horas    |
+
+### Conexiones Entre Fases
+
+Las bitácoras no son silos: cada fase referencia las anteriores y las siguientes. PHASE2 conecta con shared-kernel (fase 0), PHASE5-6 conecta con PHASE2 (odds) y PHASE7 (settlement). Esta red de dependencias permite a la IA navegar el contexto completo.
+
+### Regla de Oro
+
+Cada vez que le hables a IA sobre el proyecto:
+
+1. **Referencia la fase relevante** (ej: "fase 5-6")
+2. **Mencional la convención** del DEVELOPMENT.md
+3. **Indica las conexiones** con otras fases
+
+Esto es **ingeniería de contexto** para que la IA te ayude de verdad.
+
 ---
 
 ## Conclusiones
