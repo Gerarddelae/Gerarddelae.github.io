@@ -13,6 +13,14 @@ export interface Project {
 
 export const projects: Project[] = [
 	{
+		name: 'HEXBET',
+		description:
+			'Bet Engine es un sistema de apuestas deportivas en tiempo real construido con arquitectura de microservicios. Utiliza arquitectura hexagonal, comunicación por eventos con Kafka, NestJS y un API Gateway como punto único de entrada.',
+		demoLink: 'https://github.com/Gerarddelae/Hexbet',
+		tags: ['Microservicios', 'NestJS', 'Kafka', 'Arquitectura Hexagonal', 'TypeScript'],
+		coverImage: '/blog-placeholder-4.jpg'
+	},
+	{
 		name: 'MAGUESTIC',
 		description:
 			'Maguestic es una aplicación de gestión hotelera full-stack construida con Angular y Spring Boot. Ofrece una solución integral para gestionar operaciones hoteleras, incluyendo reservas, huéspedes, habitaciones y servicios, con una interfaz moderna y responsiva.',
@@ -31,7 +39,7 @@ export const projects: Project[] = [
 	{
 		name: 'SQL AGENT',
 		description:
-			"El Agente de Consultas SQL es una potente herramienta asistida por IA diseñada para optimizar las interacciones con bases de datos. Permite a los usuarios generar, analizar y refinar consultas SQL sin esfuerzo utilizando procesamiento de lenguaje natural (NLP), simplificando operaciones complejas de base de datos.",
+			'El Agente de Consultas SQL es una potente herramienta asistida por IA diseñada para optimizar las interacciones con bases de datos. Permite a los usuarios generar, analizar y refinar consultas SQL sin esfuerzo utilizando procesamiento de lenguaje natural (NLP), simplificando operaciones complejas de base de datos.',
 		demoLink: 'https://github.com/Gerarddelae/Hotel-SQL-Agent',
 		demoLinkRel: 'nofollow noopener noreferrer',
 		tags: ['AI', 'Saas', 'Agent', 'Python'],
