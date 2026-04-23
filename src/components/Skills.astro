@@ -37,18 +37,18 @@ const categories = [...new Set(skills.map(skill => skill.category))];
 
 <style>
   .skills-section {
-    margin: 4rem 0;
+    margin: 3rem 0;
     position: relative;
     z-index: 1;
   }
 
   .header {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .title {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--color-text);
     margin: 0;
@@ -64,27 +64,26 @@ const categories = [...new Set(skills.map(skill => skill.category))];
 
   .skills-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
   .skill-card {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1.25rem;
-    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0.75rem;
     border: 1px solid var(--color-border);
-    background: rgba(var(--color-bg), 0.3);
+    background: var(--color-bg-secondary);
     backdrop-filter: blur(10px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .skill-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     border-color: var(--color-accent);
-    box-shadow: 0 10px 20px -5px rgba(var(--color-accent), 0.1);
-    background: rgba(var(--color-bg-secondary), 0.5);
+    box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.15);
   }
 
   .icon-wrapper {
@@ -95,12 +94,13 @@ const categories = [...new Set(skills.map(skill => skill.category))];
     align-items: center;
     justify-content: center;
     background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-    border-radius: 0.75rem;
+    border-radius: 0.625rem;
     flex-shrink: 0;
   }
 
   .info {
     flex: 1;
+    min-width: 0;
   }
 
   .skill-name {
@@ -113,7 +113,7 @@ const categories = [...new Set(skills.map(skill => skill.category))];
   .skill-category {
     font-size: 0.75rem;
     color: var(--color-text-secondary);
-    margin: 0.25rem 0 0.5rem 0;
+    margin: 0.25rem 0 0.375rem 0;
   }
 
   .level-bar-bg {
@@ -134,4 +134,37 @@ const categories = [...new Set(skills.map(skill => skill.category))];
   .level-bar.senior { width: 90%; }
   .level-bar.advanced { width: 80%; }
   .level-bar.intermediate { width: 60%; }
+
+  @media (min-width: 640px) {
+    .skills-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .title {
+      font-size: 1.5rem;
+    }
+
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .skill-card {
+      padding: 1.25rem;
+      border-radius: 1rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .skills-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .skills-grid {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+  }
 </style>

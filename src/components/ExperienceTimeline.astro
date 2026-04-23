@@ -53,14 +53,14 @@ const experiences = [
     position: relative;
     max-width: 800px;
     margin: 3rem auto;
-    padding: 0 1rem;
+    padding: 0 0.5rem;
   }
 
   /* Vertical line */
   .timeline::before {
     content: '';
     position: absolute;
-    left: 2rem;
+    left: 1.25rem;
     top: 1rem;
     bottom: 0;
     width: 2px;
@@ -70,8 +70,8 @@ const experiences = [
 
   .timeline-item {
     position: relative;
-    padding-left: 4.5rem;
-    margin-bottom: 3rem;
+    padding-left: 2.5rem;
+    margin-bottom: 2rem;
     opacity: 0;
     transform: translateY(20px);
     animation: reveal 0.8s forwards;
@@ -87,7 +87,7 @@ const experiences = [
 
   .timeline-dot {
     position: absolute;
-    left: 1.5rem;
+    left: 0.75rem;
     top: 0.5rem;
     width: 1rem;
     height: 1rem;
@@ -99,18 +99,18 @@ const experiences = [
   }
 
   .timeline-content {
-    background: rgba(var(--color-bg), 0.5);
+    background: var(--color-bg-secondary);
     backdrop-filter: blur(10px);
     border: 1px solid var(--color-border);
-    border-radius: 1.5rem;
-    padding: 1.5rem;
+    border-radius: 1rem;
+    padding: 1rem;
     transition: all 0.3s;
   }
 
   .timeline-content:hover {
     border-color: var(--color-accent);
-    transform: translateX(10px);
-    background: rgba(var(--color-bg-secondary), 0.5);
+    transform: translateX(4px);
+    background: var(--color-bg-secondary);
     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
   }
 
@@ -119,37 +119,86 @@ const experiences = [
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .year {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: var(--color-accent);
     background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 99px;
   }
 
   .icon { font-size: 1.25rem; }
 
   .title {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 800;
     margin: 0.5rem 0 0.25rem 0;
     color: var(--color-text);
   }
 
   .company {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--color-text-secondary);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .description {
-    font-size: 1rem;
-    line-height: 1.6;
+    font-size: 0.875rem;
+    line-height: 1.5;
     color: var(--color-text-secondary);
     margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    .timeline {
+      padding: 0 1rem;
+    }
+
+    .timeline::before {
+      left: 2rem;
+    }
+
+    .timeline-item {
+      padding-left: 4rem;
+      margin-bottom: 3rem;
+    }
+
+    .timeline-dot {
+      left: 1.5rem;
+      top: 0.5rem;
+    }
+
+    .timeline-content {
+      padding: 1.5rem;
+      border-radius: 1.5rem;
+    }
+
+    .timeline-content:hover {
+      transform: translateX(10px);
+    }
+
+    .year {
+      font-size: 0.875rem;
+      padding: 0.25rem 0.75rem;
+    }
+
+    .title {
+      font-size: 1.25rem;
+    }
+
+    .company {
+      font-size: 0.9rem;
+    }
+
+    .description {
+      font-size: 1rem;
+      line-height: 1.6;
+    }
   }
 </style>
