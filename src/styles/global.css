@@ -36,6 +36,12 @@
 		overflow-x: hidden;
 	}
 
+	.prose table {
+		display: block;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
 	body {
 		background-color: var(--color-bg);
 		color: var(--color-text);
