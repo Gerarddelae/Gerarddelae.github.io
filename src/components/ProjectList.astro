@@ -14,10 +14,10 @@ const { projects } = Astro.props
       const isGitHub = project.demoLink?.includes('github.com');
       return (
         <div 
-          class="group relative flex flex-col h-full bg-white dark:bg-zinc-900/40 rounded-[2rem] border border-zinc-200 dark:border-zinc-800/50 overflow-hidden hover:border-indigo-500/30 dark:hover:border-indigo-400/30 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/5 dark:hover:shadow-none hover:-translate-y-1 animate-fade-up"
+          class="group relative flex flex-col h-full bg-white dark:bg-zinc-900/40 rounded-2xl md:rounded-[2rem] border border-zinc-200 dark:border-zinc-800/50 overflow-hidden hover:border-indigo-500/30 dark:hover:border-indigo-400/30 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/5 dark:hover:shadow-none hover:-translate-y-1 animate-fade-up"
           style={`animation-delay: ${index * 0.1}s`}
         >
-          <div class="relative h-48 overflow-hidden">
+          <div class="relative h-40 md:h-48 overflow-hidden">
             {project.coverImage ? (
               <img 
                 src={project.coverImage} 
@@ -50,7 +50,7 @@ const { projects } = Astro.props
             )}
           </div>
 
-          <div class="flex flex-col flex-1 p-6">
+          <div class="flex flex-col flex-1 p-4 md:p-6">
             <div class="flex flex-wrap gap-2 mb-4">
               {
                 (project.tags || [] )?.map((tag: string) => (

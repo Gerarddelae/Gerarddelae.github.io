@@ -29,7 +29,7 @@ const { Content, headings, remarkPluginFrontmatter } = await post.render();
 <BaseLayout title={seoTitle || title} description={description} image={coverImage?.src || undefined}>
   <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-indigo-600 dark:bg-indigo-400 z-[1000] transition-all duration-150 w-0"></div>
 
-	<div class='container max-w-6xl mx-auto px-4'>
+	<div class='container'>
 		<div class="lg:flex gap-12 pt-8 pb-16">
       <main class='grow min-w-0'>
         <article>
@@ -46,7 +46,7 @@ const { Content, headings, remarkPluginFrontmatter } = await post.render();
               }
             </div>
 
-            <h1 class='text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6 text-zinc-900 dark:text-zinc-100' transition:name={`title-${post.slug}`}>
+            <h1 class='text-3xl md:text-4xl lg:text-6xl font-black leading-tight mb-6 text-zinc-900 dark:text-zinc-100' transition:name={`title-${post.slug}`}>
               {title}
             </h1>
 
@@ -70,7 +70,7 @@ const { Content, headings, remarkPluginFrontmatter } = await post.render();
             {coverImage && (
               <div class="relative group overflow-hidden rounded-[2rem] shadow-2xl shadow-zinc-200 dark:shadow-none mb-12">
                 <Image 
-                  class='w-full object-cover max-h-[600px] transition-transform duration-700 group-hover:scale-105' 
+                  class='w-full object-cover max-h-[250px] md:max-h-[400px] lg:max-h-[600px] transition-transform duration-700 group-hover:scale-105' 
                   src={coverImage} 
                   alt={title} 
                   loading='eager' 
@@ -82,7 +82,7 @@ const { Content, headings, remarkPluginFrontmatter } = await post.render();
           </header>
           
           <!-- Mobile TOC -->
-          <div class="lg:hidden mb-12 p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+          <div class="lg:hidden mb-8 md:mb-12 p-4 md:p-6 rounded-2xl md:rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
             <h3 class="text-lg font-bold mb-4 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 dark:text-indigo-400"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
               Tabla de Contenidos
