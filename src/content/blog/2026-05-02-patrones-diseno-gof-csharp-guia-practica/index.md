@@ -57,7 +57,7 @@ Los patrones creacionales abstraen el proceso de instanciación de objetos. Su p
 
 **Colaboración:** Los clientes acceden a una instancia Singleton únicamente a través de la operación Instance.
 
-**Implementación en C# con thread-safety:**
+**Implementación en C# con seguridad para hilos:**
 
 ```csharp
 public sealed class ConfiguracionApp {
@@ -92,9 +92,9 @@ Console.WriteLine($"App: {config.NombreAplicacion} v{config.Version}");
 ```
 
 **Variantes comunes:**
-- **Eager Initialization:** La instancia se crea al cargar la clase. Simple pero no lazy.
-- **Lazy Initialization con Double-Check Locking:** thread-safe sin bloqueo excesivo.
-- **Lazy<T> (recomendado en C# 4.5+):** Thread-safe por defecto, código más limpio.
+- **Inicialización inmediata:** La instancia se crea al cargar la clase. Simple pero no diferida.
+- **Inicialización diferida con bloqueo de doble verificación:** segura para hilos sin bloqueo excesivo.
+- **Lazy<T> (recomendado en C# 4.5+):** Segura para hilos por defecto, código más limpio.
 
 **Cuándo aplicar:**
 - Necesitas exactamente una instancia de una clase para coordinar operaciones
@@ -823,8 +823,8 @@ var carrito = new CarritoCompras(adaptadore);
 ```
 
 **Variantes:**
-- **Object Adapter:** Usa composición (contiene el adaptee)
-- **Class Adapter:** Usa herencia (hereda del adaptee). Menos flexible.
+- **Adaptador de objeto:** Usa composición (contiene el adaptee)
+- **Adaptador de clase:** Usa herencia (hereda del adaptee). Menos flexible.
 
 **Cuándo aplicar:**
 - Necesitas integrar una clase o API de terceros cuya interfaz no coincide
@@ -952,7 +952,7 @@ foreach (var forma in formas) {
 **Cuándo aplicar:**
 - Cuando quieres evitar una herencia permanente entre una abstracción y su implementación
 - Cuando ambas dimensiones varían frecuentemente
-- Cuando necesitas cambiar la implementación en runtime
+- Cuando necesitas cambiar la implementación en tiempo de ejecución
 - Cuando la herencia genera una "explosión de clases"
 
 **Consideraciones:**
@@ -1964,7 +1964,7 @@ Console.WriteLine($"Contenido después rehacer: {editor.ObtenerContenido()}");
 
 **Intención:** Proporcionar una forma de acceder secuencialmente a los elementos de una colección sin exponer su representación subyacente.
 
-**Problema que resuelto:** Diferentes estructuras de datos necesitan ser recorridas de la misma manera. El código cliente no debería depender de la implementación interna de la colección. Además, diferentes tipos de recorrido (forward, backward, depth-first) pueden ser necesarios.
+**Problema que resuelto:** Diferentes estructuras de datos necesitan ser recorridas de la misma manera. El código cliente no debería depender de la implementación interna de la colección. Además, diferentes tipos de recorrido (adelante, hacia atrás, profundidad primero) pueden ser necesarios.
 
 **Estructura UML:**
 ```
@@ -2631,7 +2631,7 @@ Console.WriteLine($"Subtotal: {carrito.CalcularSubtotal():C}");
 Console.WriteLine($"Descuento (10%): {carrito.CalcularDescuento():C}");
 Console.WriteLine($"Total: {carrito.CalcularTotal():C}");
 
-// Cambiar estrategia en runtime
+// Cambiar estrategia en tiempo de ejecución
 carrito.CambiarEstrategia(new DescuentoPorCantidad());
 Console.WriteLine($"\nCon estrategia por cantidad: {carrito.CalcularDescuento():C}");
 ```
@@ -2923,7 +2923,1595 @@ Los patrones de diseño GoF son materializaciones concretas de los principios SO
 
 ---
 
-## 7. Conclusión
+## 7. Refactorización Real: De Switch/If a Strategy
+
+Vamos a ver un caso real de refactorización paso a paso. Imagina que trabajas en un e-commerce y tienes que calcular el costo de envío según la región y el tipo de suscripción del cliente.
+
+### El Código "Antes" (Code Smell evidente)
+
+```csharp
+public class CalculadorEnvio
+{
+    public decimal CalcularCosto(string region, string tipoSuscripcion, decimal peso)
+    {
+        decimal costoBase = 0;
+        
+        // Primer code smell: switch encadenado
+        switch (region)
+        {
+            case "Norte":
+                costoBase = 10000;
+                break;
+            case "Sur":
+                costoBase = 15000;
+                break;
+            case "Centro":
+                costoBase = 8000;
+                break;
+            case "Costa":
+                costoBase = 12000;
+                break;
+            default:
+                costoBase = 20000;
+                break;
+        }
+        
+        // Segundo code smell: if anidados dentro del switch
+        if (tipoSuscripcion == "Premium")
+        {
+            costoBase *= 0.5m; // 50% descuento
+        }
+        else if (tipoSuscripcion == "Plus")
+        {
+            costoBase *= 0.75m; // 25% descuento
+        }
+        // else: Sin descuento para estándar
+        
+        // Tercer code smell: otro if para peso extra
+        if (peso > 5)
+        {
+            costoBase += (peso - 5) * 1000;
+        }
+        
+        return costoBase;
+    }
+}
+
+// Uso en otro lugar del código
+public class CarritoCompra
+{
+    public decimal CalcularTotal(decimal subtotal, string region, string suscripcion, decimal peso)
+    {
+        var calculador = new CalculadorEnvio();
+        var envio = calculador.CalcularCosto(region, suscripcion, peso);
+        return subtotal + envio;
+    }
+}
+```
+
+### ¿Por qué esto es un problema?
+
+1. **Viola OCP (Open/Closed Principle):** Cada vez que agregas una nueva región o tipo de suscripción, debes modificar este método.
+
+2. **Viola SRP (Single Responsibility Principle):** Este método hace tres cosas diferentes: calcular costo base por región, aplicar descuento por suscripción, y adicionar costo por peso.
+
+3. **Difícil de probar:** No puedes testear cada regla individualmente.
+
+4. **Duplicación potencial:** Si necesitas esta lógica en otros lugares, terminas copiando el código o creando dependencias circulares.
+
+### El Proceso de Refactorización
+
+**Paso 1: Identificar las dimensiones de variación**
+
+En este código vemos dos dimensiones que varían independientemente:
+- La región geográfica (Norte, Sur, Centro, Costa)
+- El tipo de suscripción (Premium, Plus, Estándar)
+
+Esto es un indicador claro de que Strategy Pattern puede ayudar.
+
+**Paso 2: Extraer la estrategia de descuento (la más simple)**
+
+Primero, extraemos la lógica de descuentos porque es la más aislada.
+
+```csharp
+// Interfaz para la estrategia de descuento
+public interface IEstrategiaDescuento
+{
+    decimal Aplicar(decimal costoBase);
+}
+
+// Estrategias concretas
+public class DescuentoPremium : IEstrategiaDescuento
+{
+    public decimal Aplicar(decimal costoBase) => costoBase * 0.5m;
+}
+
+public class DescuentoPlus : IEstrategiaDescuento
+{
+    public decimal Aplicar(decimal costoBase) => costoBase * 0.75m;
+}
+
+public class SinDescuento : IEstrategiaDescuento
+{
+    public decimal Aplicar(decimal costoBase) => costoBase;
+}
+```
+
+**Paso 3: Extraer la estrategia de región**
+
+```csharp
+public interface IEstrategiaRegion
+{
+    decimal ObtenerCostoBase();
+}
+
+public class RegionNorte : IEstrategiaRegion
+{
+    public decimal ObtenerCostoBase() => 10000m;
+}
+
+public class RegionSur : IEstrategiaRegion
+{
+    public decimal ObtenerCostoBase() => 15000m;
+}
+
+public class RegionCentro : IEstrategiaRegion
+{
+    public decimal ObtenerCostoBase() => 8000m;
+}
+
+public class RegionCosta : IEstrategiaRegion
+{
+    public decimal ObtenerCostoBase() => 12000m;
+}
+
+public class RegionDefault : IEstrategiaRegion
+{
+    public decimal ObtenerCostoBase() => 20000m;
+}
+```
+
+**Paso 4: Refactorizar la clase principal**
+
+```csharp
+public class CalculadorEnvioRefactorizado
+{
+    private readonly IEstrategiaRegion _region;
+    private readonly IEstrategiaDescuento _descuento;
+    
+    public CalculadorEnvioRefactorizado(
+        IEstrategiaRegion region, 
+        IEstrategiaDescuento descuento)
+    {
+        _region = region;
+        _descuento = descuento;
+    }
+    
+    public decimal CalcularCosto(decimal peso)
+    {
+        // Paso 1: Obtener costo base por región
+        var costoBase = _region.ObtenerCostoBase();
+        
+        // Paso 2: Aplicar descuento por suscripción
+        costoBase = _descuento.Aplicar(costoBase);
+        
+        // Paso 3: Aplicar cargo por peso adicional
+        if (peso > 5)
+        {
+            costoBase += (peso - 5) * 1000;
+        }
+        
+        return costoBase;
+    }
+}
+```
+
+**Paso 5: Crear una fábrica para construir la estrategia fácilmente**
+
+```csharp
+public class FabricaCalculadorEnvio
+{
+    public CalculadorEnvioRefactorizado Crear(string region, string suscripcion)
+    {
+        var estrategiaRegion = region switch
+        {
+            "Norte" => new RegionNorte(),
+            "Sur" => new RegionSur(),
+            "Centro" => new RegionCentro(),
+            "Costa" => new RegionCosta(),
+            _ => new RegionDefault()
+        };
+        
+        var estrategiaDescuento = suscripcion switch
+        {
+            "Premium" => new DescuentoPremium(),
+            "Plus" => new DescuentoPlus(),
+            _ => new SinDescuento()
+        };
+        
+        return new CalculadorEnvioRefactorizado(estrategiaRegion, estrategiaDescuento);
+    }
+}
+```
+
+### El Código "Después"
+
+```csharp
+// Uso simplificado
+public class CarritoCompraRefactorizado
+{
+    private readonly FabricaCalculadorEnvio _fabrica = new();
+    
+    public decimal CalcularTotal(decimal subtotal, string region, string suscripcion, decimal peso)
+    {
+        var calculador = _fabrica.Crear(region, suscripcion);
+        var envio = calculador.CalcularCosto(peso);
+        return subtotal + envio;
+    }
+}
+
+// Con inyección de dependencias (aún mejor)
+public class ServicioCarrito
+{
+    private readonly Dictionary<(string region, string suscripcion), CalculadorEnvioRefactorizado> _cache;
+    
+    public ServicioCarrito()
+    {
+        _cache = new Dictionary<(string, string), CalculadorEnvioRefactorizado>();
+    }
+    
+    public decimal CalcularEnvio(string region, string suscripcion, decimal peso)
+    {
+        var key = (region, suscripcion);
+        
+        if (!_cache.TryGetValue(key, out var calculador))
+        {
+            var fabrica = new FabricaCalculadorEnvio();
+            calculador = fabrica.Crear(region, suscripcion);
+            _cache[key] = calculador;
+        }
+        
+        return calculador.CalcularCosto(peso);
+    }
+}
+```
+
+### Beneficios Obtenidos
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Agregar nueva región** | Modificar switch en el método principal | Crear nueva clase que implementa `IEstrategiaRegion` |
+| **Agregar nueva suscripción** | Modificar ifs anidados | Crear nueva clase que implementa `IEstrategiaDescuento` |
+| **Testing** | Difícil probar reglas aisladamente | Cada estrategia se testa independientemente |
+| **Reutilización** | No posible | Las estrategias pueden reutilizarse en otros contextos |
+| **OCP** | Violado | Cada estrategia es extensible sin modificar código existente |
+| **SRP** | Violado | Cada clase hace una sola cosa |
+
+### ¿Por qué Strategy y no State?
+
+Una pregunta común es: "¿No sería mejor usar State aquí?". La diferencia clave:
+
+- **Strategy:** El cliente elige explícitamente qué algoritmo usar (en este caso, el tipo de suscripción y región son seleccionados externamente, probablemente por configuración o base de datos).
+
+- **State:** Las transiciones ocurren automáticamente en respuesta a eventos internos del objeto.
+
+En nuestro caso, la selección de estrategia viene del exterior (parámetros de método), no de transiciones internas, así que **Strategy** es la elección correcta.
+
+---
+
+## 8. Refactorización Real: De Condicionales Encadenadas a Chain of Responsibility
+
+Vamos a ver otro caso común: un sistema de validación donde múltiples reglas se aplican en secuencia. Imagina que trabajas en una plataforma de pagos y necesitas validar transacciones antes de procesarlas.
+
+### El Código "Antes" (Code Smell evidente)
+
+```csharp
+public class ValidadorTransaccion
+{
+    public (bool valida, string error) Validar(Transaccion transaccion)
+    {
+        // Primer code smell: validaciones encadenadas en if/else
+        if (transaccion.Monto <= 0)
+        {
+            return (false, "El monto debe ser mayor a cero");
+        }
+        
+        if (transaccion.Monto > 10000000) // 10 millones
+        {
+            return (false, "El monto excede el límite máximo de 10 millones");
+        }
+        
+        if (string.IsNullOrWhiteSpace(transaccion.NumeroTarjeta))
+        {
+            return (false, "El número de tarjeta es requerido");
+        }
+        
+        if (transaccion.NumeroTarjeta.Length != 16)
+        {
+            return (false, "El número de tarjeta debe tener 16 dígitos");
+        }
+        
+        if (!transaccion.NumeroTarjeta.All(char.IsDigit))
+        {
+            return (false, "El número de tarjeta debe contener solo dígitos");
+        }
+        
+        if (transaccion.FechaExpiracion <= DateTime.Now)
+        {
+            return (false, "La tarjeta ha expirado");
+        }
+        
+        if (transaccion.CVV.Length != 3 && transaccion.CVV.Length != 4)
+        {
+            return (false, "El CVV debe tener 3 o 4 dígitos");
+        }
+        
+        if (transaccion.Titular.Length < 3)
+        {
+            return (false, "El nombre del titular es inválido");
+        }
+        
+        // Si llegó hasta aquí, pasa todas las validaciones
+        return (true, string.Empty);
+    }
+}
+
+public class Transaccion
+{
+    public decimal Monto { get; set; }
+    public string NumeroTarjeta { get; set; }
+    public DateTime FechaExpiracion { get; set; }
+    public string CVV { get; set; }
+    public string Titular { get; set; }
+    public string? Email { get; set; }
+}
+```
+
+### ¿Por qué esto es un problema?
+
+1. **Cada nueva validación requiere modificar el método:** El código crece y se vuelve inmanejable.
+
+2. **Difícil de probar:** No puedes testear cada regla independientemente, ni saltarte reglas específicas para pruebas.
+
+3. **Orden fijo:** No hay forma de cambiar el orden de las validaciones ni de activar/desactivar validaciones específicas.
+
+4. **Viola OCP:** Cada vez que agregas una regla, debes modificar esta clase.
+
+### El Proceso de Refactorización
+
+**Paso 1: Definir la interfaz del manejador**
+
+```csharp
+public interface IManejadorValidacion
+{
+    (bool esValida, string? error) Validar(Transaccion transaccion);
+    IManejadorValidacion EstablecerSiguiente(IManejadorValidacion siguiente);
+}
+```
+
+**Paso 2: Crear la clase base abstracta**
+
+```csharp
+public abstract class ManejadorValidacionBase : IManejadorValidacion
+{
+    protected IManejadorValidacion? _siguiente;
+    
+    public virtual (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        // Por defecto, pasar al siguiente si existe
+        if (_siguiente != null)
+        {
+            return _siguiente.Validar(transaccion);
+        }
+        
+        // Si no hay siguiente, la validación pasa
+        return (true, null);
+    }
+    
+    public IManejadorValidacion EstablecerSiguiente(IManejadorValidacion siguiente)
+    {
+        _siguiente = siguiente;
+        return siguiente;
+    }
+}
+```
+
+**Paso 3: Crear manejadores concretos para cada regla de validación**
+
+```csharp
+// Validar monto positivo
+public class ValidadorMontoPositivo : ManejadorValidacionBase
+{
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (transaccion.Monto <= 0)
+        {
+            return (false, "El monto debe ser mayor a cero");
+        }
+        
+        Console.WriteLine("  ✓ Monto válido");
+        return base.Validar(transaccion);
+    }
+}
+
+// Validar monto máximo
+public class ValidadorMontoMaximo : ManejadorValidacionBase
+{
+    private readonly decimal _montoMaximo;
+    
+    public ValidadorMontoMaximo(decimal montoMaximo = 10000000m)
+    {
+        _montoMaximo = montoMaximo;
+    }
+    
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (transaccion.Monto > _montoMaximo)
+        {
+            return (false, $"El monto excede el límite máximo de {_montoMaximo:C}");
+        }
+        
+        Console.WriteLine("  ✓ Monto dentro del límite");
+        return base.Validar(transaccion);
+    }
+}
+
+// Validar número de tarjeta requerido
+public class ValidadorTarjetaRequerida : ManejadorValidacionBase
+{
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (string.IsNullOrWhiteSpace(transaccion.NumeroTarjeta))
+        {
+            return (false, "El número de tarjeta es requerido");
+        }
+        
+        Console.WriteLine("  ✓ Tarjeta proporcionada");
+        return base.Validar(transaccion);
+    }
+}
+
+// Validar longitud de tarjeta
+public class ValidadorLongitudTarjeta : ManejadorValidacionBase
+{
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (transaccion.NumeroTarjeta.Length != 16)
+        {
+            return (false, "El número de tarjeta debe tener 16 dígitos");
+        }
+        
+        Console.WriteLine("  ✓ Longitud de tarjeta válida");
+        return base.Validar(transaccion);
+    }
+}
+
+// Validar que solo contenga dígitos
+public class ValidadorSoloDigitos : ManejadorValidacionBase
+{
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (!transaccion.NumeroTarjeta.All(char.IsDigit))
+        {
+            return (false, "El número de tarjeta debe contener solo dígitos");
+        }
+        
+        Console.WriteLine("  ✓ Solo dígitos en tarjeta");
+        return base.Validar(transaccion);
+    }
+}
+
+// Validar fecha de expiración
+public class ValidadorFechaExpiracion : ManejadorValidacionBase
+{
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (transaccion.FechaExpiracion <= DateTime.Now)
+        {
+            return (false, "La tarjeta ha expirado");
+        }
+        
+        Console.WriteLine("  ✓ Tarjeta vigente");
+        return base.Validar(transaccion);
+    }
+}
+
+// Validar CVV
+public class ValidadorCVV : ManejadorValidacionBase
+{
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (transaccion.CVV.Length != 3 && transaccion.CVV.Length != 4)
+        {
+            return (false, "El CVV debe tener 3 o 4 dígitos");
+        }
+        
+        Console.WriteLine("  ✓ CVV válido");
+        return base.Validar(transaccion);
+    }
+}
+
+// Validar nombre del titular
+public class ValidadorTitular : ManejadorValidacionBase
+{
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        if (transaccion.Titular.Length < 3)
+        {
+            return (false, "El nombre del titular es inválido");
+        }
+        
+        Console.WriteLine("  ✓ Titular válido");
+        return base.Validar(transaccion);
+    }
+}
+```
+
+**Paso 4: Crear una fábrica para configurar la cadena**
+
+```csharp
+public class FabricaValidadorTransaccion
+{
+    public IManejadorValidacion CrearCadenaCompleta()
+    {
+        var cadena = new ValidadorMontoPositivo();
+        cadena.EstablecerSiguiente(new ValidadorMontoMaximo())
+              .EstablecerSiguiente(new ValidadorTarjetaRequerida())
+              .EstablecerSiguiente(new ValidadorLongitudTarjeta())
+              .EstablecerSiguiente(new ValidadorSoloDigitos())
+              .EstablecerSiguiente(new ValidadorFechaExpiracion())
+              .EstablecerSiguiente(new ValidadorCVV())
+              .EstablecerSiguiente(new ValidadorTitular());
+        
+        return cadena;
+    }
+    
+    public IManejadorValidacion CrearCadenaSimple()
+    {
+        // Cadena mínima para pruebas o transacciones de bajo riesgo
+        var cadena = new ValidadorMontoPositivo();
+        cadena.EstablecerSiguiente(new ValidadorTarjetaRequerida())
+              .EstablecerSiguiente(new ValidadorLongitudTarjeta());
+        
+        return cadena;
+    }
+    
+    public IManejadorValidacion CrearCadenaPersonalizada(
+        bool validarMontoMaximo = true,
+        bool validarSoloDigitos = true,
+        bool validarExpiracion = true,
+        bool validarCVV = true,
+        bool validarTitular = true)
+    {
+        var cadena = new ValidadorMontoPositivo();
+        
+        if (validarMontoMaximo)
+            cadena.EstablecerSiguiente(new ValidadorMontoMaximo());
+        
+        cadena.EstablecerSiguiente(new ValidadorTarjetaRequerida())
+              .EstablecerSiguiente(new ValidadorLongitudTarjeta());
+        
+        if (validarSoloDigitos)
+            cadena.EstablecerSiguiente(new ValidadorSoloDigitos());
+        
+        if (validarExpiracion)
+            cadena.EstablecerSiguiente(new ValidadorFechaExpiracion());
+        
+        if (validarCVV)
+            cadena.EstablecerSiguiente(new ValidadorCVV());
+        
+        if (validarTitular)
+            cadena.EstablecerSiguiente(new ValidadorTitular());
+        
+        return cadena;
+    }
+}
+```
+
+### El Código "Después"
+
+```csharp
+public class ValidadorTransaccionRefactorizado
+{
+    private readonly IManejadorValidacion _cadena;
+    
+    public ValidadorTransaccionRefactorizado(IManejadorValidacion cadena)
+    {
+        _cadena = cadena;
+    }
+    
+    public (bool valida, string error) Validar(Transaccion transaccion)
+    {
+        var resultado = _cadena.Validar(transaccion);
+        return resultado;
+    }
+}
+
+// Uso en el servicio de pagos
+public class ServicioPagos
+{
+    private readonly FabricaValidadorTransaccion _fabrica = new();
+    
+    public ResultadoProcesamiento ProcesarPago(Transaccion transaccion)
+    {
+        // Usar cadena completa para transacciones normales
+        var validador = new ValidadorTransaccionRefactorizado(
+            _fabrica.CrearCadenaCompleta()
+        );
+        
+        var (esValida, error) = validador.Validar(transaccion);
+        
+        if (!esValida)
+        {
+            return new ResultadoProcesamiento 
+            { 
+                Exito = false, 
+                Mensaje = error 
+            };
+        }
+        
+        // Aquí iría la lógica de procesamiento real
+        return new ResultadoProcesamiento 
+        { 
+            Exito = true, 
+            Mensaje = "Transacción procesada exitosamente" 
+        };
+    }
+}
+
+// Demo
+class Program
+{
+    static void Main()
+    {
+        var fabrica = new FabricaValidadorTransaccion();
+        var validador = new ValidadorTransaccionRefactorizado(
+            fabrica.CrearCadenaCompleta()
+        );
+        
+        var transaccionValida = new Transaccion
+        {
+            Monto = 50000m,
+            NumeroTarjeta = "4532123456789012",
+            FechaExpiracion = DateTime.Now.AddYears(2),
+            CVV = "123",
+            Titular = "Juan Pérez"
+        };
+        
+        var transaccionInvalida = new Transaccion
+        {
+            Monto = -1000m,
+            NumeroTarjeta = "123",
+            FechaExpiracion = DateTime.Now.AddYears(-1),
+            CVV = "1",
+            Titular = "AB"
+        };
+        
+        Console.WriteLine("=== Transacción Válida ===");
+        var (valida1, error1) = validador.Validar(transaccionValida);
+        Console.WriteLine($"Resultado: {(valida1 ? "VÁLIDA" : "INVÁLIDA")} - {error1}");
+        
+        Console.WriteLine("\n=== Transacción Inválida ===");
+        var (valida2, error2) = validador.Validar(transaccionInvalida);
+        Console.WriteLine($"Resultado: {(valida2 ? "VÁLIDA" : "INVÁLIDA")} - {error2}");
+    }
+}
+```
+
+### Beneficios Obtenidos
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Agregar nueva validación** | Modificar método huge | Crear nueva clase que implementa `IManejadorValidacion` |
+| **Testing** | Difícil probar reglas aisladamente | Cada manejador se testa independientemente |
+| **Orden de validaciones** | Fijo, no configurable | Configurable mediante la fábrica |
+| **Desactivar reglas** | Imposible | Fácil mediante fábrica personalizada |
+| **OCP** | Violado | Cada manejador es extensible sin modificar código existente |
+| **Reutilización** | No posible | Los manejadores pueden reutilizarse en otros flujos |
+| **Debugging** | Difícil saber qué validación falló | Cada manejador imprime su resultado |
+
+### ¿Por qué Chain of Responsibility y no Strategy?
+
+- **Chain of Responsibility:** Cada manejador decide si procesar la solicitud o pasarla al siguiente. El orden importa y cada manejador puede decidir si continuar o no.
+
+- **Strategy:** Todos los algoritmos se ejecutan y se combinan sus resultados. El orden no importa normalmente.
+
+En nuestro caso de validaciones:
+- Cada validación debe ejecutarse solo si la anterior pasó (orden matters)
+- Cuando una validación falla, no tiene sentido continuar
+- Cada manejador tiene la responsabilidad de decidir si pasar al siguiente
+
+Esto hace que **Chain of Responsibility** sea la elección correcta.
+
+### Bonus: Agregar logging y métricas sin modificar la cadena
+
+Puedes agregar un manejador decorador para logging sin modificar las validaciones existentes:
+
+```csharp
+public class ValidadorConLogging : ManejadorValidacionBase
+{
+    private readonly IManejadorValidacion _siguiente;
+    
+    public ValidadorConLogging(IManejadorValidacion siguiente)
+    {
+        _siguiente = siguiente;
+    }
+    
+    public override (bool esValida, string? error) Validar(Transaccion transaccion)
+    {
+        var inicio = DateTime.Now;
+        
+        Console.WriteLine($"[LOG] Iniciando validación de transacción: {transaccion.Monto:C}");
+        
+        var resultado = _siguiente.Validar(transaccion);
+        
+        var duracion = DateTime.Now - inicio;
+        Console.WriteLine($"[LOG] Validación completada en {duracion.TotalMilliseconds}ms - " +
+                         $"Resultado: {(resultado.esValida ? "EXITOSA" : "FALLIDA")}");
+        
+        return resultado;
+    }
+}
+
+// Uso
+var cadena = new ValidadorMontoPositivo();
+cadena.EstablecerSiguiente(new ValidadorConLogging(new ValidadorTarjetaRequerida()));
+```
+
+---
+
+## 9. Refactorización Real: De Métodos Auxiliary a Decorator
+
+Vamos a ver un caso muy común: necesitas agregar funcionalidad transversal como logging, caching, validación, medición de tiempo, etc. a tus servicios sin modificar su código.
+
+Imagina que tienes un servicio de productos y necesitas agregar logging, caché y validación sin ensuciar la lógica de negocio.
+
+### El Código "Antes" (Code Smell evidente)
+
+```csharp
+public class ServicioProductos
+{
+    private readonly Dictionary<int, Producto> _productos = new();
+    
+    public ServicioProductos()
+    {
+        // Datos de ejemplo
+        _productos[1] = new Producto(1, "Laptop", 1500000m);
+        _productos[2] = new Producto(2, "Mouse", 50000m);
+    }
+    
+    public Producto? ObtenerPorId(int id)
+    {
+        // Code smell: logging mezclado con lógica de negocio
+        Console.WriteLine($"[LOG] Obteniendo producto {id}");
+        
+        // Code smell: validación mezclada
+        if (id <= 0)
+        {
+            Console.WriteLine("[LOG] ID inválido");
+            return null;
+        }
+        
+        // Code smell: caché mezclado
+        var cacheKey = $"producto_{id}";
+        if (_cache.TryGetValue(cacheKey, out var cached))
+        {
+            Console.WriteLine("[CACHE] Devolviendo desde caché");
+            return cached;
+        }
+        
+        // Lógica real
+        if (_productos.TryGetValue(id, out var producto))
+        {
+            Console.WriteLine("[LOG] Producto encontrado");
+            _cache[cacheKey] = producto;
+            return producto;
+        }
+        
+        Console.WriteLine("[LOG] Producto no encontrado");
+        return null;
+    }
+    
+    public List<Producto> ObtenerTodos()
+    {
+        Console.WriteLine("[LOG] Obteniendo todos los productos");
+        
+        if (_todosCache != null)
+        {
+            Console.WriteLine("[CACHE] Devolviendo lista desde caché");
+            return _todosCache;
+        }
+        
+        var productos = _productos.Values.ToList();
+        _todosCache = productos;
+        return productos;
+    }
+    
+    public void Guardar(Producto producto)
+    {
+        Console.WriteLine($"[LOG] Guardando producto {producto.Id}");
+        
+        if (producto == null)
+            throw new ArgumentNullException(nameof(producto));
+        
+        if (string.IsNullOrWhiteSpace(producto.Nombre))
+            throw new ArgumentException("El nombre es requerido");
+        
+        if (producto.Precio < 0)
+            throw new ArgumentException("El precio no puede ser negativo");
+        
+        _productos[producto.Id] = producto;
+        
+        // Invalidar caché
+        _cache.Clear();
+        _todosCache = null;
+    }
+    
+    // Code smell: campos mezclados con lógica de negocio
+    private readonly Dictionary<string, object> _cache = new();
+    private List<Producto>? _todosCache;
+}
+
+public class Producto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; }
+    public decimal Precio { get; set; }
+    
+    public Producto(int id, string nombre, decimal precio)
+    {
+        Id = id;
+        Nombre = nombre;
+        Precio = precio;
+    }
+}
+```
+
+### ¿Por qué esto es un problema?
+
+1. **Viola SRP:** La clase hace muchas cosas: lógica de negocio, logging, validación, caché.
+
+2. **Difícil de probar:** No puedes testear la lógica de negocio sin el logging.
+
+3. **Duplicación:** Si necesitas las mismas funcionalidades en otros servicios, terminas copiando código.
+
+4. **Acoplamiento:** Cada servicio está coupled con la implementación de logging, caché, etc.
+
+5. **Imposible combinar funcionalidades selectivamente:** No puedes tener logging sin caché.
+
+### El Proceso de Refactorización
+
+**Paso 1: Definir la interfaz del componente**
+
+```csharp
+public interface IServicioProductos
+{
+    Producto? ObtenerPorId(int id);
+    List<Producto> ObtenerTodos();
+    void Guardar(Producto producto);
+}
+```
+
+**Paso 2: Crear el componente concreto (lógica de negocio pura)**
+
+```csharp
+public class ServicioProductosCore : IServicioProductos
+{
+    private readonly Dictionary<int, Producto> _productos = new();
+    
+    public ServicioProductosCore()
+    {
+        _productos[1] = new Producto(1, "Laptop", 1500000m);
+        _productos[2] = new Producto(2, "Mouse", 50000m);
+    }
+    
+    public Producto? ObtenerPorId(int id)
+    {
+        return _productos.TryGetValue(id, out var producto) ? producto : null;
+    }
+    
+    public List<Producto> ObtenerTodos()
+    {
+        return _productos.Values.ToList();
+    }
+    
+    public void Guardar(Producto producto)
+    {
+        _productos[producto.Id] = producto;
+    }
+}
+```
+
+**Paso 3: Crear la clase base decoradora**
+
+```csharp
+public abstract class DecoradorServiciosProductos : IServicioProductos
+{
+    protected readonly IServicioProductos _anterior;
+    
+    protected DecoradorServiciosProductos(IServicioProductos anterior)
+    {
+        _anterior = anterior;
+    }
+    
+    public virtual Producto? ObtenerPorId(int id)
+    {
+        return _anterior.ObtenerPorId(id);
+    }
+    
+    public virtual List<Producto> ObtenerTodos()
+    {
+        return _anterior.ObtenerTodos();
+    }
+    
+    public virtual void Guardar(Producto producto)
+    {
+        _anterior.Guardar(producto);
+    }
+}
+```
+
+**Paso 4: Crear decoradores concretos**
+
+```csharp
+// Decorador de Logging
+public class DecoradorLogging : DecoradorServiciosProductos
+{
+    public DecoradorLogging(IServicioProductos anterior) : base(anterior) { }
+    
+    public override Producto? ObtenerPorId(int id)
+    {
+        Console.WriteLine($"[LOG] Obteniendo producto {id}");
+        var resultado = base.ObtenerPorId(id);
+        Console.WriteLine($"[LOG] Resultado: {(resultado != null ? "Encontrado" : "No encontrado")}");
+        return resultado;
+    }
+    
+    public override List<Producto> ObtenerTodos()
+    {
+        Console.WriteLine("[LOG] Obteniendo todos los productos");
+        return base.ObtenerTodos();
+    }
+    
+    public override void Guardar(Producto producto)
+    {
+        Console.WriteLine($"[LOG] Guardando producto {producto.Id} - {producto.Nombre}");
+        base.Guardar(producto);
+        Console.WriteLine("[LOG] Guardado completado");
+    }
+}
+
+// Decorador de Caché
+public class DecoradorCache : DecoradorServiciosProductos
+{
+    private readonly Dictionary<string, (object? valor, DateTime expires)> _cache = new();
+    private readonly TimeSpan _expiracion;
+    
+    public DecoradorCache(IServicioProductos anterior, TimeSpan? expiracion = null) 
+        : base(anterior) 
+    {
+        _expiracion = expiracion ?? TimeSpan.FromMinutes(5);
+    }
+    
+    public override Producto? ObtenerPorId(int id)
+    {
+        var key = $"producto_{id}";
+        
+        if (_cache.TryGetValue(key, out var entrada) && entrada.expires > DateTime.Now)
+        {
+            Console.WriteLine("[CACHE] Obtenido desde caché");
+            return (Producto?)entrada.valor;
+        }
+        
+        var resultado = base.ObtenerPorId(id);
+        if (resultado != null)
+        {
+            _cache[key] = (resultado, DateTime.Now.Add(_expiracion));
+            Console.WriteLine("[CACHE] Guardado en caché");
+        }
+        
+        return resultado;
+    }
+    
+    public override List<Producto> ObtenerTodos()
+    {
+        var key = "todos_productos";
+        
+        if (_cache.TryGetValue(key, out var entrada) && entrada.expires > DateTime.Now)
+        {
+            Console.WriteLine("[CACHE] Lista obtenida desde caché");
+            return (List<Producto>?)entrada.valor ?? new List<Producto>();
+        }
+        
+        var resultado = base.ObtenerTodos();
+        _cache[key] = (resultado, DateTime.Now.Add(_expiracion));
+        return resultado;
+    }
+    
+    public override void Guardar(Producto producto)
+    {
+        base.Guardar(producto);
+        
+        // Invalidar caché
+        _cache.Clear();
+        Console.WriteLine("[CACHE] Caché invalidado");
+    }
+}
+
+// Decorador de Validación
+public class DecoradorValidacion : DecoradorServiciosProductos
+{
+    public DecoradorValidacion(IServicioProductos anterior) : base(anterior) { }
+    
+    public override Producto? ObtenerPorId(int id)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentException("El ID debe ser mayor a cero", nameof(id));
+        }
+        
+        return base.ObtenerPorId(id);
+    }
+    
+    public override void Guardar(Producto producto)
+    {
+        if (producto == null)
+        {
+            throw new ArgumentNullException(nameof(producto));
+        }
+        
+        if (string.IsNullOrWhiteSpace(producto.Nombre))
+        {
+            throw new ArgumentException("El nombre es requerido", nameof(producto));
+        }
+        
+        if (producto.Precio < 0)
+        {
+            throw new ArgumentException("El precio no puede ser negativo", nameof(producto));
+        }
+        
+        base.Guardar(producto);
+    }
+}
+
+// Decorador de Medición de Tiempo
+public class DecoradorMedicionTiempo : DecoradorServiciosProductos
+{
+    public DecoradorMedicionTiempo(IServicioProductos anterior) : base(anterior) { }
+    
+    public override Producto? ObtenerPorId(int id)
+    {
+        var inicio = DateTime.Now;
+        var resultado = base.ObtenerPorId(id);
+        var duracion = DateTime.Now - inicio;
+        
+        Console.WriteLine($"[TIEMPO] ObtenerPorId({id}) completó en {duracion.TotalMilliseconds:F2}ms");
+        return resultado;
+    }
+    
+    public override List<Producto> ObtenerTodos()
+    {
+        var inicio = DateTime.Now;
+        var resultado = base.ObtenerTodos();
+        var duracion = DateTime.Now - inicio;
+        
+        Console.WriteLine($"[TIEMPO] ObtenerTodos() completó en {duracion.TotalMilliseconds:F2}ms");
+        return resultado;
+    }
+}
+```
+
+**Paso 5: Construir el pipeline según necesidad**
+
+```csharp
+public class FabricaServiciosProductos
+{
+    public IServicioProductos CrearServicioCompleto()
+    {
+        // Orden importante: primero validación, luego logging, luego caché, luego tiempo
+        var servicio = new ServicioProductosCore();
+        servicio = new DecoradorValidacion(servicio);
+        servicio = new DecoradorLogging(servicio);
+        servicio = new DecoradorCache(servicio);
+        servicio = new DecoradorMedicionTiempo(servicio);
+        
+        return servicio;
+    }
+    
+    public IServicioProductos CrearServicioParaTesting()
+    {
+        // Sin efectos secundarios para testing
+        return new ServicioProductosCore();
+    }
+    
+    public IServicioProductos CrearServicioConLoggingYCache()
+    {
+        var servicio = new ServicioProductosCore();
+        servicio = new DecoradorLogging(servicio);
+        servicio = new DecoradorCache(servicio);
+        return servicio;
+    }
+}
+```
+
+### El Código "Después"
+
+```csharp
+// Uso simple
+class Program
+{
+    static void Main()
+    {
+        var fabrica = new FabricaServiciosProductos();
+        
+        Console.WriteLine("=== Servicio Completo ===");
+        var servicioCompleto = fabrica.CrearServicioCompleto();
+        
+        var producto = servicioCompleto.ObtenerPorId(1);
+        Console.WriteLine($"Producto: {producto?.Nombre} - {producto?.Precio:C}");
+        
+        var productos = servicioCompleto.ObtenerTodos();
+        Console.WriteLine($"Total productos: {productos.Count}");
+        
+        Console.WriteLine("\n=== Servicio con Logging y Cache ===");
+        var servicioParcial = fabrica.CrearServicioConLoggingYCache();
+        
+        var p1 = servicioParcial.ObtenerPorId(1); // Primera llamada - sin cache
+        var p2 = servicioParcial.ObtenerPorId(1); // Segunda llamada - desde cache
+        
+        Console.WriteLine("\n=== Guardar producto ===");
+        servicioCompleto.Guardar(new Producto(3, "Teclado", 80000m));
+        
+        Console.WriteLine("\n=== Intentar invalidar ID ===");
+        try
+        {
+            servicioCompleto.ObtenerPorId(-1);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+}
+```
+
+### Beneficios Obtenidos
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Agregar logging** | Modificar clase existente | Agregar DecoradorLogging |
+| **Agregar caché** | Modificar clase existente | Agregar DecoradorCache |
+| **Agregar validación** | Mezclar con lógica | Agregar DecoradorValidacion |
+| **Testing** | Difícil por efectos secundarios | Cada decorador se testa independientemente |
+| **Combinar funcionalidades** | No posible | Configurable mediante fábrica |
+| **Orden de ejecución** | Fijo | Configurable |
+| **SRP** | Violado | Cada decorador tiene una responsabilidad |
+| **OCP** | Violado | Añadir decoradores sin modificar código existente |
+
+### ¿Por qué Decorator y no otros patrones?
+
+- **Decorator vs Proxy:** Ambos envuelven objetos, pero Proxy controla el acceso (autenticación, remoting), mientras Decorator añade comportamiento dinámicamente.
+
+- **Decorator vs Chain of Responsibility:** Chain pasa la solicitud a través de una cadena donde cada eslabón decide si continuar. Decorator pasa la solicitud a través de capas que añaden comportamiento ythen pasan al siguiente.
+
+- **Decorator vs inheritance:** Inheritance añade comportamiento estáticamente (en tiempo de compilación). Decorator lo hace dinámicamente (en tiempo de ejecución).
+
+En este caso, cada funcionalidad (logging, caché, validación) es ortogonal y debe poder combinarse independientemente, lo que hace a **Decorator** la elección perfecta.
+
+---
+
+## 10. Refactorización Real: De Switch/Case a State
+
+Vamos a ver otro caso muy común: sistemas con múltiples estados donde el comportamiento cambia según el estado actual. Imagina un sistema de préstamos de biblioteca.
+
+### El Código "Antes" (Code Smell evidente)
+
+```csharp
+public class Prestamo
+{
+    public int Id { get; set; }
+    public string Libro { get; set; }
+    public string Usuario { get; set; }
+    public DateTime FechaInicio { get; set; }
+    public DateTime? FechaDevolucion { get; set; }
+    public string Estado { get; set; } // "Pendiente", "Aprobado", "Rechazado", "Activo", "Devuelto", "Vencido"
+    public DateTime? FechaVencimiento { get; set; }
+}
+
+public class GestorPrestamos
+{
+    public void Aprobar(Prestamo prestamo)
+    {
+        if (prestamo.Estado != "Pendiente")
+        {
+            Console.WriteLine("Solo se pueden aprobar préstamos pendientes");
+            return;
+        }
+        
+        prestamo.Estado = "Aprobado";
+        prestamo.FechaVencimiento = DateTime.Now.AddDays(14);
+        Console.WriteLine($"Préstamo aprobado, vence el {prestamo.FechaVencimiento:dd/MM/yyyy}");
+    }
+    
+    public void Rechazar(Prestamo prestamo, string motivo)
+    {
+        if (prestamo.Estado != "Pendiente")
+        {
+            Console.WriteLine("Solo se pueden rechazar préstamos pendientes");
+            return;
+        }
+        
+        prestamo.Estado = "Rechazado";
+        Console.WriteLine($"Préstamo rechazado: {motivo}");
+    }
+    
+    public void Activar(Prestamo prestamo)
+    {
+        if (prestamo.Estado != "Aprobado")
+        {
+            Console.WriteLine("Solo se pueden activar préstamos aprobados");
+            return;
+        }
+        
+        prestamo.Estado = "Activo";
+        Console.WriteLine("Préstamo activado, libro prestado");
+    }
+    
+    public void Devolver(Prestamo prestamo)
+    {
+        // Code smell: switch dentro de cada método
+        switch (prestamo.Estado)
+        {
+            case "Activo":
+                prestamo.Estado = "Devuelto";
+                prestamo.FechaDevolucion = DateTime.Now;
+                Console.WriteLine("Libro devuelto exitosamente");
+                break;
+            case "Vencido":
+                prestamo.Estado = "Devuelto";
+                prestamo.FechaDevolucion = DateTime.Now;
+                Console.WriteLine("Libro devuelto con retraso");
+                break;
+            default:
+                Console.WriteLine($"No se puede devolver un préstamo en estado: {prestamo.Estado}");
+                break;
+        }
+    }
+    
+    public void MarcarVencido(Prestamo prestamo)
+    {
+        if (prestamo.Estado == "Activo" && prestamo.FechaVencimiento < DateTime.Now)
+        {
+            prestamo.Estado = "Vencido";
+            Console.WriteLine("Préstamo marcado como vencido");
+        }
+    }
+    
+    public string ObtenerDescripcionEstado(Prestamo prestamo)
+    {
+        // Code smell: otro switch para el mismo estado
+        return prestamo.Estado switch
+        {
+            "Pendiente" => "Esperando aprobación",
+            "Aprobado" => $"Aprobado, vence el {prestamo.FechaVencimiento:dd/MM/yyyy}",
+            "Rechazado" => "Rechazado por el sistema",
+            "Activo" => $"Activo, vence el {prestamo.FechaVencimiento:dd/MM/yyyy}",
+            "Devuelto" => $"Devuelto el {prestamo.FechaDevolucion:dd/MM/yyyy}",
+            "Vencido" => "Vencido, requiere atención",
+            _ => "Estado desconocido"
+        };
+    }
+}
+```
+
+### ¿Por qué esto es un problema?
+
+1. **Viola OCP:** Cada vez que agregas un nuevo estado, debes modificar todos los métodos.
+
+2. **Viola SRP:** Los métodos contienen lógica de múltiples estados.
+
+3. **Difícil de mantener:** El código de un estado está disperso en múltiples métodos.
+
+4. **Transiciones inválidas no se detectan:** Puedes activar un préstamo ya devuelto sin errores claros.
+
+5. **Testing difícil:** No puedes probar el comportamiento de un estado sin manipular el string.
+
+### El Proceso de Refactorización
+
+**Paso 1: Definir la interfaz de estado**
+
+```csharp
+public interface IEstadoPrestamo
+{
+    string Nombre { get; }
+    void Aprobar(Prestamo prestamo);
+    void Rechazar(Prestamo prestamo, string motivo);
+    void Activar(Prestamo prestamo);
+    void Devolver(Prestamo prestamo);
+    void MarcarVencido(Prestamo prestamo);
+    string ObtenerDescripcion(Prestamo prestamo);
+}
+```
+
+**Paso 2: Crear clase base con comportamiento por defecto**
+
+```csharp
+public abstract class EstadoPrestamoBase : IEstadoPrestamo
+{
+    public abstract string Nombre { get; }
+    
+    public virtual void Aprobar(Prestamo prestamo)
+        => Console.WriteLine($"No se puede aprobar un préstamo en estado: {Nombre}");
+    
+    public virtual void Rechazar(Prestamo prestamo, string motivo)
+        => Console.WriteLine($"No se puede rechazar un préstamo en estado: {Nombre}");
+    
+    public virtual void Activar(Prestamo prestamo)
+        => Console.WriteLine($"No se puede activar un préstamo en estado: {Nombre}");
+    
+    public virtual void Devolver(Prestamo prestamo)
+        => Console.WriteLine($"No se puede devolver un préstamo en estado: {Nombre}");
+    
+    public virtual void MarcarVencido(Prestamo prestamo)
+        => Console.WriteLine("No aplica para este estado");
+    
+    public virtual string ObtenerDescripcion(Prestamo prestamo)
+        => $"Estado: {Nombre}";
+}
+```
+
+**Paso 3: Crear estados concretos**
+
+```csharp
+public class EstadoPendiente : EstadoPrestamoBase
+{
+    public override string Nombre => "Pendiente";
+    
+    public override void Aprobar(Prestamo prestamo)
+    {
+        prestamo.Estado = "Aprobado";
+        prestamo.FechaVencimiento = DateTime.Now.AddDays(14);
+        Console.WriteLine($"✓ Préstamo aprobado, vence el {prestamo.FechaVencimiento:dd/MM/yyyy}");
+    }
+    
+    public override void Rechazar(Prestamo prestamo, string motivo)
+    {
+        prestamo.Estado = "Rechazado";
+        Console.WriteLine($"✗ Préstamo rechazado: {motivo}");
+    }
+}
+
+public class EstadoAprobado : EstadoPrestamoBase
+{
+    public override string Nombre => "Aprobado";
+    
+    public override void Activar(Prestamo prestamo)
+    {
+        prestamo.Estado = "Activo";
+        Console.WriteLine("✓ Préstamo activado, libro prestado");
+    }
+    
+    public override string ObtenerDescripcion(Prestamo prestamo)
+        => $"Aprobado, vence el {prestamo.FechaVencimiento:dd/MM/yyyy}";
+}
+
+public class EstadoActivo : EstadoPrestamoBase
+{
+    public override string Nombre => "Activo";
+    
+    public override void Devolver(Prestamo prestamo)
+    {
+        prestamo.Estado = "Devuelto";
+        prestamo.FechaDevolucion = DateTime.Now;
+        Console.WriteLine("✓ Libro devuelto exitosamente");
+    }
+    
+    public override void MarcarVencido(Prestamo prestamo)
+    {
+        if (prestamo.FechaVencimiento < DateTime.Now)
+        {
+            prestamo.Estado = "Vencido";
+            Console.WriteLine("⚠ Préstamo marcado como vencido");
+        }
+    }
+    
+    public override string ObtenerDescripcion(Prestamo prestamo)
+        => $"Activo, vence el {prestamo.FechaVencimiento:dd/MM/yyyy}";
+}
+
+public class EstadoVencido : EstadoPrestamoBase
+{
+    public override string Nombre => "Vencido";
+    
+    public override void Devolver(Prestamo prestamo)
+    {
+        prestamo.Estado = "Devuelto";
+        prestamo.FechaDevolucion = DateTime.Now;
+        Console.WriteLine("⚠ Libro devuelto con retraso");
+    }
+    
+    public override string ObtenerDescripcion(Prestamo prestamo)
+        => "⚠ Vencido, requiere atención inmediata";
+}
+
+public class EstadoDevuelto : EstadoPrestamoBase
+{
+    public override string Nombre => "Devuelto";
+    
+    public override string ObtenerDescripcion(Prestamo prestamo)
+        => $"Devuelto el {prestamo.FechaDevolucion:dd/MM/yyyy}";
+}
+
+public class EstadoRechazado : EstadoPrestamoBase
+{
+    public override string Nombre => "Rechazado";
+    
+    public override string ObtenerDescripcion(Prestamo prestamo)
+        => "✗ Rechazado por el sistema";
+}
+```
+
+**Paso 4: Modificar la clase Prestamo para usar estados**
+
+```csharp
+public class Prestamo
+{
+    public int Id { get; set; }
+    public string Libro { get; set; }
+    public string Usuario { get; set; }
+    public DateTime FechaInicio { get; set; }
+    public DateTime? FechaDevolucion { get; set; }
+    public DateTime? FechaVencimiento { get; set; }
+    
+    private IEstadoPrestamo _estado;
+    
+    // El estado se gestiona internamente
+    public string Estado => _estado.Nombre;
+    
+    public Prestamo(string libro, string usuario)
+    {
+        Libro = libro;
+        Usuario = usuario;
+        FechaInicio = DateTime.Now;
+        _estado = new EstadoPendiente();
+    }
+    
+    // Métodos que delegan al estado
+    public void Aprobar() => _estado.Aprobar(this);
+    public void Rechazar(string motivo) => _estado.Rechazar(this, motivo);
+    public void Activar() => _estado.Activar(this);
+    public void Devolver() => _estado.Devolver(this);
+    public void MarcarVencido() => _estado.MarcarVencido(this);
+    public string ObtenerDescripcion() => _estado.ObtenerDescripcion(this);
+    
+    // Método interno para cambiar de estado
+    internal void CambiarEstado(IEstadoPrestamo nuevoEstado)
+    {
+        _estado = nuevoEstado;
+    }
+}
+```
+
+**Paso 5: Simplificar el GestorPrestamos**
+
+```csharp
+public class GestorPrestamos
+{
+    // El gestor ahora es muy simple - solo necesita el préstamo
+    public void Aprobar(Prestamo prestamo) => prestamo.Aprobar();
+    public void Rechazar(Prestamo prestamo, string motivo) => prestamo.Rechazar(motivo);
+    public void Activar(Prestamo prestamo) => prestamo.Activar();
+    public void Devolver(Prestamo prestamo) => prestamo.Devolver();
+    public void MarcarVencido(Prestamo prestamo) => prestamo.MarcarVencido();
+    public string ObtenerDescripcion(Prestamo prestamo) => prestamo.ObtenerDescripcion();
+}
+```
+
+### El Código "Después"
+
+```csharp
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Crear nuevo préstamo ===");
+        var prestamo = new Prestamo("Cien Años de Soledad", "Juan Pérez");
+        Console.WriteLine(prestamo.ObtenerDescripcion());
+        
+        Console.WriteLine("\n=== Aprobar ===");
+        prestamo.Aprobar();
+        Console.WriteLine(prestamo.ObtenerDescripcion());
+        
+        Console.WriteLine("\n=== Activar ===");
+        prestamo.Activar();
+        Console.WriteLine(prestamo.ObtenerDescripcion());
+        
+        Console.WriteLine("\n=== Intentar aprobar de nuevo ===");
+        prestamo.Aprobar(); // No debería funcionar
+        
+        Console.WriteLine("\n=== Devolver ===");
+        prestamo.Devolver();
+        Console.WriteLine(prestamo.ObtenerDescripcion());
+        
+        Console.WriteLine("\n=== Intentar devolver de nuevo ===");
+        prestamo.Devolver(); // No debería funcionar
+        
+        Console.WriteLine("\n=== Crear otro préstamo y rechazarlo ===");
+        var prestamo2 = new Prestamo("El Principito", "María García");
+        prestamo2.Rechazar("Límite de préstamos alcanzado");
+        Console.WriteLine(prestamo2.ObtenerDescripcion());
+    }
+}
+```
+
+### Beneficios Obtenidos
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Agregar nuevo estado** | Modificar todos los métodos | Crear nueva clase de estado |
+| **Transiciones inválidas** | No se detectan | Cada estado define qué puede hacer |
+| **Testing** | Difícil probar estados | Cada estado se testa independientemente |
+| **Lógica de un estado** | Dispersa en múltiples métodos | Centralizada en una clase |
+| **OCP** | Violado | Cada estado es extensible sin modificar código existente |
+| **SRP** | Violado | Cada clase tiene una sola responsabilidad |
+| **Mantenibilidad** | Difícil | Fácil de entender y modificar |
+
+### ¿Por qué State y no Strategy?
+
+La confusión más común es entre State y Strategy. Aquí están las diferencias clave:
+
+| Aspecto | State | Strategy |
+|---------|-------|----------|
+| **Quién decide el cambio** | El estado actual decide la transición | El cliente elige la estrategia explícitamente |
+| **Transiciones** | Definen el objeto estado | Definidas externamente |
+| **Cuándo cambia** | En respuesta a operaciones del objeto | En cualquier momento por el cliente |
+| **Número de estados** | Finito y bien definido | Puede ser infinito |
+
+En nuestro caso de préstamos:
+- Las transiciones ocurren automáticamente en respuesta a las operaciones (aprobar → activar → devolver)
+- El código cliente no debería elegir qué estado poner
+- Los estados tienen un ciclo de vida definido
+
+Esto hace que **State** sea la elección correcta.
+
+### Bonus: Agregar reglas de transición con un validador
+
+```csharp
+public class ValidadorTransiciones
+{
+    private static readonly Dictionary<string, HashSet<string>> _permisidas = new()
+    {
+        ["Pendiente"] = new() { "Aprobado", "Rechazado" },
+        ["Aprobado"] = new() { "Activo", "Pendiente" },
+        ["Activo"] = new() { "Vencido", "Devuelto" },
+        ["Vencido"] = new() { "Devuelto" },
+        ["Devuelto"] = new(), // Estado terminal
+        ["Rechazado"] = new() // Estado terminal
+    };
+    
+    public static bool EsTransicionValida(string actual, string nueva)
+    {
+        return _permisidas.TryGetValue(actual, out var permitidas) && permitidas.Contains(nueva);
+    }
+}
+
+// Uso en el estado para validar antes de cambiar
+protected void CambiarEstadoSiValido(Prestamo prestamo, IEstadoPrestamo nuevoEstado)
+{
+    if (ValidadorTransiciones.EsTransicionValida(prestamo.Estado, nuevoEstado.Nombre))
+    {
+        prestamo.CambiarEstado(nuevoEstado);
+    }
+    else
+    {
+        Console.WriteLine($"✗ Transición no válida: {prestamo.Estado} -> {nuevoEstado.Nombre}");
+    }
+}
+```
+
+---
+
+## 11. Conclusión
 
 Los patrones GoF siguen siendo plenamente relevantes en el ecosistema actual. C# moderno con sus características (genéricos, lambdas, métodos de extensión, pattern matching) permite implementaciones más limpias de estos patrones.
 
